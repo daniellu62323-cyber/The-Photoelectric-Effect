@@ -7,9 +7,10 @@
  * read against a dark ground. A light theme would have fought the animation for
  * the whole talk.
  *
- * No web fonts and no images. Everything here is colour, gradients and borders,
- * so the pages render identically with the network unplugged — which matters,
- * because the presentation must survive classroom wifi failing.
+ * No images, and no font loaded from anyone else's server. The one webfont,
+ * Schoolbell, is self-hosted in fonts/ — so the pages render identically with
+ * the network unplugged, which matters because the presentation must survive
+ * classroom wifi failing and because quiz.html has a 50 KB budget.
  *
  * ONE RULE WORTH KNOWING: --accent is the physics. Later tasks set it from the
  * current wavelength, so the whole interface turns violet at 400 nm and red at
@@ -52,12 +53,24 @@
 
   --ink:    system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 
-  /* The handwriting face. Measured: no handwriting font in the running has λ, φ
-     or ₀ — and this presentation is full of them. So --ink is the LAST entry on
+  /* The handwriting face. Measured: Schoolbell has no λ, no φ and no subscript
+     zero — and this presentation is full of them. So --ink is the LAST entry on
      purpose: a missing glyph lands on the body sans and reads as deliberate,
      instead of dropping to the browser's default serif, which next to
      handwriting looks like a rendering fault. Never let serif end this list. */
-  --hand:   "Segoe Print", "Bradley Hand", "Chalkboard SE", "Comic Sans MS", var(--ink);
+  --hand:   Schoolbell, "Segoe Print", "Chalkboard SE", "Comic Sans MS", var(--ink);
+}
+
+/* Schoolbell, self-hosted so it survives the wifi failing. Apache 2.0;
+   see fonts/README.md and fonts/LICENSE.txt.
+   font-display: swap — the page must be readable in the body sans immediately
+   and upgrade when the font lands, never blank while a phone waits on it. */
+@font-face {
+  font-family: Schoolbell;
+  src: url("fonts/schoolbell.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
 }
 
 * { box-sizing: border-box; }
@@ -80,7 +93,9 @@ body {
 
 /* ---- Type ------------------------------------------------------------- */
 
-h1, h2, h3 { font-family: var(--hand); font-weight: 600; line-height: 1.2; margin: 0 0 .4em; }
+/* Weight 400: Schoolbell ships one weight only. Asking for 600 makes the
+   browser synthesise bold, which smears a handwriting face. */
+h1, h2, h3 { font-family: var(--hand); font-weight: 400; line-height: 1.2; margin: 0 0 .4em; }
 h1 { font-size: clamp(30px, 6vw, 52px); letter-spacing: .01em; }
 h2 { font-size: clamp(22px, 4vw, 32px); }
 h3 { font-size: clamp(18px, 3vw, 22px); color: var(--chalk-dim); }
