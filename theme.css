@@ -1,0 +1,225 @@
+/* The Photoelectric Effect — chalkboard theme.
+ *
+ * Shared by present.html (projected) and quiz.html (phones). index.html keeps
+ * its own dark-brown styling this round; see SPEC.md §6.
+ *
+ * Why a chalkboard and not paper: glowing photons and ejected electrons only
+ * read against a dark ground. A light theme would have fought the animation for
+ * the whole talk.
+ *
+ * No web fonts and no images. Everything here is colour, gradients and borders,
+ * so the pages render identically with the network unplugged — which matters,
+ * because the presentation must survive classroom wifi failing.
+ *
+ * ONE RULE WORTH KNOWING: --accent is the physics. Later tasks set it from the
+ * current wavelength, so the whole interface turns violet at 400 nm and red at
+ * 700 nm. Everything accent-coloured below follows automatically.
+ */
+
+:root {
+  /* Tells the browser to render its own widgets dark: the <select> chevron, the
+     range-slider track, scrollbars and form focus rings. Without it those come
+     out light-on-dark and the page looks half-finished. */
+  color-scheme: dark;
+
+  /* The board itself */
+  --board:        #131715;
+  --board-panel:  #191f1c;
+  --board-sunk:   #0e1211;
+
+  /* Chalk. --chalk-faint is decorative only: it does not meet text contrast
+     against the board, so never put a number or a label in it. */
+  --chalk:        #f0efe6;
+  --chalk-dim:    #a9b0a6;
+  --chalk-faint:  #6e766c;
+
+  --rule:         #39413b;
+  --rule-soft:    #262d29;
+
+  /* Set from the wavelength by present.html (task 6). These defaults are
+     400 nm violet, so a page that never sets them still looks deliberate. */
+  --accent:       #b69aff;
+  --accent-dim:   #6d5c9c;
+
+  /* Coloured chalks. These match index.html's energy-bar palette on purpose —
+     the same quantity keeps the same colour across all three pages. */
+  --chalk-violet: #bb9ce8;   /* photon energy   */
+  --chalk-amber:  #e5bb76;   /* work function   */
+  --chalk-cyan:   #93d9db;   /* kinetic energy  */
+
+  --emit:         #93d9db;
+  --no-emit:      #e5bb76;
+
+  --ink:    system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --hand:   "Segoe Print", "Bradley Hand", "Chalkboard SE", "Comic Sans MS", var(--ink);
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  padding: 24px 16px;
+  background-color: var(--board);
+  /* Chalk dust and the ghost of a thousand erasings. Cheap: two gradients. */
+  background-image:
+    radial-gradient(ellipse 80% 50% at 22% 18%, rgba(240,239,230,.020), transparent 70%),
+    radial-gradient(ellipse 70% 60% at 78% 82%, rgba(240,239,230,.016), transparent 65%);
+  background-attachment: fixed;
+  color: var(--chalk);
+  font-family: var(--ink);
+  font-size: 17px;
+  line-height: 1.55;
+  -webkit-text-size-adjust: 100%;
+}
+
+/* ---- Type ------------------------------------------------------------- */
+
+h1, h2, h3 { font-family: var(--hand); font-weight: 600; line-height: 1.2; margin: 0 0 .4em; }
+h1 { font-size: clamp(30px, 6vw, 52px); letter-spacing: .01em; }
+h2 { font-size: clamp(22px, 4vw, 32px); }
+h3 { font-size: clamp(18px, 3vw, 22px); color: var(--chalk-dim); }
+
+p { margin: 0 0 1em; max-width: 62ch; }
+
+.eyebrow {
+  font-size: 13px; letter-spacing: .18em; text-transform: uppercase;
+  color: var(--chalk-dim); margin-bottom: .6em;
+}
+.small { font-size: 14px; color: var(--chalk-dim); }
+strong { color: var(--chalk); font-weight: 600; }
+em { color: var(--accent); font-style: normal; }
+
+/* Underline drawn like a chalk stroke: slightly uneven, never a crisp rule. */
+.underline {
+  border-bottom: 2px solid var(--accent);
+  border-radius: 40%;
+  padding-bottom: 2px;
+}
+
+/* ---- Surfaces --------------------------------------------------------- */
+
+.panel {
+  background: var(--board-panel);
+  border: 1px solid var(--rule);
+  border-radius: 10px;
+  padding: 20px 22px;
+}
+
+hr { border: 0; border-top: 1px solid var(--rule-soft); margin: 28px 0; }
+
+/* ---- Readouts: the numbers that carry the physics ---------------------- */
+
+.readout { display: flex; flex-direction: column; gap: 4px; }
+.readout label { font-size: 13px; letter-spacing: .06em; text-transform: uppercase; color: var(--chalk-dim); }
+
+.value {
+  font-family: var(--hand);
+  font-size: clamp(26px, 5vw, 40px);
+  line-height: 1.1;
+  color: var(--chalk);
+  font-variant-numeric: tabular-nums;
+}
+.value.accent { color: var(--accent); }
+.value.emit   { color: var(--emit); }
+.value.none   { color: var(--no-emit); }
+
+/* Masked: the ask/reveal mechanism (SPEC.md §2). A masked readout must read as
+   DELIBERATELY HIDDEN, never as broken or as a value of zero — the audience is
+   answering a question about this number right now. */
+.masked .value,
+.value.masked {
+  color: transparent;
+  position: relative;
+}
+.masked .value::after,
+.value.masked::after {
+  content: "?";
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--chalk-faint);
+  border: 2px dashed var(--rule);
+  border-radius: 8px;
+  background: var(--board-sunk);
+}
+
+/* ---- Controls --------------------------------------------------------- */
+
+button, .btn {
+  font: inherit;
+  font-family: var(--hand);
+  font-size: 17px;
+  color: var(--chalk);
+  background: var(--board-sunk);
+  border: 1.5px solid var(--rule);
+  border-radius: 8px;
+  padding: 10px 18px;
+  cursor: pointer;
+  transition: border-color .15s, color .15s, background .15s;
+}
+button:hover, .btn:hover { border-color: var(--accent); color: var(--accent); }
+button:active, .btn:active { background: var(--board-panel); }
+button[disabled] { opacity: .45; cursor: not-allowed; }
+
+button.primary {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+button.primary:hover { background: var(--board-panel); }
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
+input[type="text"] {
+  font: inherit; color: var(--chalk);
+  background: var(--board-sunk);
+  border: 1.5px solid var(--rule);
+  border-radius: 8px;
+  padding: 12px 14px;
+  width: 100%;
+}
+input[type="text"]::placeholder { color: var(--chalk-faint); }
+
+label { display: block; font-size: 14px; color: var(--chalk-dim); margin-bottom: 6px; }
+
+input[type="range"] {
+  width: 100%;
+  accent-color: var(--accent);
+}
+
+select {
+  font: inherit; color: var(--chalk);
+  background: var(--board-sunk);
+  border: 1.5px solid var(--rule);
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+
+/* ---- Energy bars ------------------------------------------------------- */
+
+.bar { display: grid; grid-template-columns: 150px 1fr 96px; gap: 12px; align-items: center; margin-bottom: 10px; }
+.bar > span:first-child { font-size: 14px; color: var(--chalk-dim); }
+.bar > span:last-child  { font-family: var(--hand); text-align: right; font-variant-numeric: tabular-nums; }
+.bar .track { height: 14px; background: var(--board-sunk); border: 1px solid var(--rule-soft); border-radius: 7px; overflow: hidden; }
+.bar .fill  { height: 100%; border-radius: 7px; }
+
+/* ---- Status ------------------------------------------------------------ */
+
+.status { font-family: var(--hand); font-size: 20px; padding: 10px 0; }
+.status.emit { color: var(--emit); }
+.status.none { color: var(--no-emit); }
+
+/* ---- Phone-first layout ------------------------------------------------ */
+
+.wrap { max-width: 900px; margin: 0 auto; }
+
+@media (max-width: 480px) {
+  body { padding: 18px 16px; font-size: 16px; }
+  .bar { grid-template-columns: 1fr; gap: 4px; }
+  .bar > span:last-child { text-align: left; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation: none !important; transition: none !important; }
+}

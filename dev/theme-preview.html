@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>theme.css preview — dev only</title>
+<link rel="stylesheet" href="../theme.css">
+<style>
+  /* Preview-page scaffolding only. Nothing here belongs in theme.css. */
+  .grid { display: grid; gap: 20px; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+  .swatches { display: flex; flex-wrap: wrap; gap: 10px; }
+  .sw { flex: 1 1 100px; border: 1px solid var(--rule); border-radius: 8px; padding: 10px; text-align: center; font-size: 13px; }
+  .sw b { display: block; height: 28px; border-radius: 5px; margin-bottom: 8px; }
+  .note { color: var(--chalk-faint); font-size: 13px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="eyebrow">dev/ — not linked from any page</div>
+  <h1>The Photoelectric Effect</h1>
+  <p>Every element <code>theme.css</code> defines, on one page, so it can be judged at a glance.
+  It is <strong>unmistakably a chalkboard</strong>, not dark brown, and nothing below is
+  grey-on-grey.</p>
+
+  <hr>
+
+  <h2>Type</h2>
+  <p>Body text is a clean sans, because it has to be read from the back of a room and at
+  phone size. Headings and every number use the handwriting stack — the same division Khan
+  Academy uses: the <em>drawing</em> is handwritten, the interface is not.</p>
+  <p class="small">Small print, for captions and hints. Dimmer, still legible.</p>
+  <p class="note">Faint text — decorative only. It deliberately fails text contrast, so no
+  label or number is ever allowed to use it.</p>
+
+  <hr>
+
+  <h2>Readouts</h2>
+  <div class="grid">
+    <div class="panel">
+      <div class="readout">
+        <label>Photon energy</label>
+        <div class="value accent">3.10 eV</div>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="readout">
+        <label>Maximum kinetic energy</label>
+        <div class="value emit">0.80 eV</div>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="readout">
+        <label>Maximum kinetic energy</label>
+        <div class="value masked">0.80 eV</div>
+      </div>
+      <p class="small" style="margin:10px 0 0">Masked — the audience is answering a question
+      about this number right now. It must read as hidden, never as broken or as zero.</p>
+    </div>
+  </div>
+
+  <hr>
+
+  <h2>Status</h2>
+  <div class="status emit">Emission · Photon energy exceeds the work function</div>
+  <div class="status none">No emission · Photon energy does not exceed the work function</div>
+
+  <hr>
+
+  <h2>Energy balance</h2>
+  <div class="panel">
+    <div class="bar"><span>Photon energy</span><div class="track"><div class="fill" style="width:44%;background:var(--chalk-violet)"></div></div><span>3.10 eV</span></div>
+    <div class="bar"><span>Work function</span><div class="track"><div class="fill" style="width:33%;background:var(--chalk-amber)"></div></div><span>2.30 eV</span></div>
+    <div class="bar"><span>Maximum kinetic energy</span><div class="track"><div class="fill" style="width:11%;background:var(--chalk-cyan)"></div></div><span>0.80 eV</span></div>
+  </div>
+
+  <hr>
+
+  <h2>Controls</h2>
+  <div class="grid">
+    <div class="panel">
+      <button>Pause animation</button>
+      <button class="primary" style="margin-left:8px">Reveal</button>
+      <button disabled style="margin-left:8px">Disabled</button>
+    </div>
+    <div class="panel">
+      <label for="n">Your name</label>
+      <input id="n" type="text" placeholder="Type your name">
+    </div>
+    <div class="panel">
+      <label for="w">Wavelength λ</label>
+      <input id="w" type="range" min="180" max="800" value="400">
+      <label for="m" style="margin-top:14px">Metal surface</label>
+      <select id="m"><option>Sodium · 2.30 eV</option><option>Zinc · 4.30 eV</option></select>
+    </div>
+  </div>
+
+  <hr>
+
+  <h2>The accent is the physics</h2>
+  <p>Later tasks set <code>--accent</code> from the current wavelength, so the whole interface
+  follows the light. These are set inline here to prove the variable drives everything above;
+  task 6 computes them properly.</p>
+  <div class="swatches">
+    <div class="sw" style="--accent:#b69aff"><b style="background:var(--accent)"></b>400 nm<br><span style="color:var(--accent)">violet</span></div>
+    <div class="sw" style="--accent:#7ea8ff"><b style="background:var(--accent)"></b>450 nm<br><span style="color:var(--accent)">blue</span></div>
+    <div class="sw" style="--accent:#7fd98a"><b style="background:var(--accent)"></b>550 nm<br><span style="color:var(--accent)">green</span></div>
+    <div class="sw" style="--accent:#e8a13f"><b style="background:var(--accent)"></b>600 nm<br><span style="color:var(--accent)">amber</span></div>
+    <div class="sw" style="--accent:#e2564a"><b style="background:var(--accent)"></b>700 nm<br><span style="color:var(--accent)">red</span></div>
+  </div>
+
+  <div class="panel" style="margin-top:20px; --accent:#e2564a">
+    <h3 style="color:var(--accent)">The same panel at 700 nm</h3>
+    <p>Buttons, focus rings, underlines and accent numbers all follow <code>--accent</code>.
+    Nothing needs re-styling per wavelength.</p>
+    <div class="readout"><label>Photon energy</label><div class="value accent">1.77 eV</div></div>
+    <button class="primary" style="margin-top:12px">Reveal</button>
+  </div>
+
+</div>
+</body>
+</html>
