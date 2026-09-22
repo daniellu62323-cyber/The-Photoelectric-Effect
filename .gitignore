@@ -1,0 +1,6 @@
+# Planning and review documents. These stay on disk and remain the source of
+# truth for the build, but the repository holds the shipped project only.
+# README.md is the exception and is tracked.
+*.md
+!README.md
+!app/fonts/README.md
