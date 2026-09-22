@@ -467,6 +467,13 @@ $('restart').onclick = () => {
   arming = setTimeout(disarm, 4000);
 };
 
+/* Clicking anywhere else cancels the arming, so a restart always costs two
+   deliberate clicks in a row on the button itself. Capture phase, so it runs
+   even if something downstream stops the event. */
+document.addEventListener('click', e => {
+  if (arming && !$('restart').contains(e.target)) { clearTimeout(arming); disarm(); }
+}, true);
+
 if (typeof physics !== 'function' || typeof HC === 'undefined' || typeof MATERIALS === 'undefined') {
   $('fatal').style.display = 'block';
 } else {
