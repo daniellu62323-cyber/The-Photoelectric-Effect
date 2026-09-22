@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Photoelectric Effect — presentation</title>
+<link rel="stylesheet" href="theme.css">
+<style>
+/* Layout for the projected page. Everything visual comes from theme.css. */
+
+html, body { height: 100%; }
+body { display: flex; flex-direction: column; padding: 0; }
+
+/* The presenter's strip: where we are, and how much is left. Small and dim —
+   it is for the presenter, not for the room. */
+.beatbar {
+  display: flex; align-items: center; gap: 16px;
+  padding: 12px 28px;
+  border-bottom: 1px solid var(--rule-soft);
+  font-size: 13px; color: var(--chalk-dim);
+  flex: none;
+}
+.counter { font-variant-numeric: tabular-nums; letter-spacing: .04em; }
+
+/* One dot per beat, grouped by part, so the presenter can see at a glance
+   that a part has a second beat coming. */
+.dots { display: flex; gap: 4px; align-items: center; }
+.dots .grp { display: flex; gap: 2px; margin-right: 7px; }
+.dots i {
+  width: 9px; height: 9px; border-radius: 50%;
+  border: 1px solid var(--rule); display: block;
+}
+.dots i.done    { background: var(--rule); }
+.dots i.current { background: var(--accent); border-color: var(--accent); }
+
+.stage {
+  flex: 1 1 auto;
+  display: flex; flex-direction: column; justify-content: center;
+  padding: 40px 48px;
+  max-width: 1400px; width: 100%; margin: 0 auto;
+}
+
+.partno {
+  font-family: var(--hand);
+  font-size: 22px; color: var(--chalk-dim); margin-bottom: 4px;
+}
+.stage h1 { margin-bottom: 10px; }
+
+.beatname {
+  display: inline-block; align-self: flex-start;
+  font-size: 13px; letter-spacing: .16em; text-transform: uppercase;
+  color: var(--accent);
+  border: 1px solid var(--accent-dim); border-radius: 999px;
+  padding: 4px 12px;
+}
+.beatname.single { color: var(--chalk-dim); border-color: var(--rule); }
+
+.placeholder {
+  margin-top: 40px; padding: 40px;
+  border: 2px dashed var(--rule); border-radius: 12px;
+  color: var(--chalk-faint); font-size: 15px;
+  max-width: 640px;
+}
+
+.hint { padding: 12px 28px; font-size: 13px; color: var(--chalk-faint); flex: none; }
+
+/* Shown only if physics.js failed to load. Silence would be worse. */
+#fatal {
+  display: none; margin: 24px 48px; padding: 16px 20px;
+  border: 2px solid var(--no-emit); border-radius: 10px; color: var(--no-emit);
+}
+</style>
+</head>
+<body>
+
+<div class="beatbar">
+  <span class="counter" id="counter"></span>
+  <div class="dots" id="dots"></div>
+</div>
+
+<div id="fatal"><strong>physics.js did not load.</strong> Every number on this page comes from it.
+Check that <code>physics.js</code> sits beside <code>present.html</code>.</div>
+
+<main class="stage">
+  <div class="partno" id="partno"></div>
+  <h1 id="title"></h1>
+  <span class="beatname" id="beatname"></span>
+  <div class="placeholder" id="placeholder"></div>
+</main>
+
+<div class="hint">→ / ← or PageDown / PageUp to move · Space advances · Home returns to the start</div>
+
+<script src="physics.js"></script>
+<script>
+/* The ten parts. `question: true` means the part carries at least one quiz
+   question, and therefore splits into two beats — SPEC.md §2:
+     setup  — the situation is shown, the answering readouts are masked, the
+              animation is held, and the question is open on the phones;
+     reveal — the answer runs.
+   Without that split the projector shows the answer while the question is
+   being asked, which is what made six of nine questions meaningless in v1. */
+const PARTS = [
+  { title: 'Join',              question: false },
+  { title: 'Intro',             question: false },
+  { title: 'The puzzle',        question: true  },
+  { title: 'Light in packets',  question: true  },
+  { title: 'The work function', question: true  },
+  { title: 'The threshold',     question: true  },
+  { title: 'Leftover energy',   question: true  },
+  { title: 'The straight line', question: false },
+  { title: 'Why it matters',    question: false },
+  { title: 'Scores, then play', question: false }
+];
+
+/* Flatten parts into the beat sequence the arrow keys actually walk.
+   Ten parts, five of which split, gives fifteen beats. */
+const BEATS = [];
+PARTS.forEach((p, i) => {
+  if (p.question) { BEATS.push({ part: i, beat: 'setup' }); BEATS.push({ part: i, beat: 'reveal' }); }
+  else            { BEATS.push({ part: i, beat: 'single' }); }
+});
+
+let at = 0;
+
+const $ = id => document.getElementById(id);
+
+function buildDots() {
+  $('dots').innerHTML = PARTS.map((p, i) => {
+    const n = p.question ? 2 : 1;
+    return '<span class="grp">' + '<i></i>'.repeat(n) + '</span>';
+  }).join('');
+}
+
+function render() {
+  const b = BEATS[at], p = PARTS[b.part];
+
+  $('partno').textContent = b.part + ' /';
+  $('title').textContent = p.title;
+
+  const name = $('beatname');
+  name.textContent = b.beat === 'single' ? 'one beat' : b.beat;
+  name.classList.toggle('single', b.beat === 'single');
+
+  $('counter').textContent = 'beat ' + (at + 1) + ' of ' + BEATS.length;
+
+  $('placeholder').textContent = b.beat === 'setup'
+    ? 'Setup beat. The question is open on the phones and the answering readouts are masked. Content arrives in tasks 7–9.'
+    : b.beat === 'reveal'
+      ? 'Reveal beat. The animation runs and the readouts appear. Content arrives in tasks 7–9.'
+      : 'Content arrives in tasks 7–9.';
+
+  const dots = $('dots').querySelectorAll('i');
+  dots.forEach((d, i) => {
+    d.classList.toggle('done', i < at);
+    d.classList.toggle('current', i === at);
+  });
+}
+
+function go(delta) {
+  const next = at + delta;
+  if (next < 0 || next >= BEATS.length) return;   // ends are walls, not wraps
+  at = next;
+  render();
+}
+
+addEventListener('keydown', e => {
+  switch (e.key) {
+    /* Arrows, and PageUp/PageDown because most presentation clickers send
+       those rather than arrows. Space too: it is what people press. */
+    case 'ArrowRight': case 'PageDown': case ' ': go(1);  break;
+    case 'ArrowLeft':  case 'PageUp':            go(-1); break;
+    case 'Home':       at = 0; render();                 break;
+    case 'End':        at = BEATS.length - 1; render();  break;
+    default: return;
+  }
+  e.preventDefault();
+});
+
+if (typeof physics !== 'function' || typeof HC === 'undefined') $('fatal').style.display = 'block';
+
+buildDots();
+render();
+</script>
+</body>
+</html>
