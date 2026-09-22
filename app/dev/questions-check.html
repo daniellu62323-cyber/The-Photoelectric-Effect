@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>questions.js self-check — dev only</title>
+<link rel="stylesheet" href="../theme.css">
+<style>
+  .wrap { max-width: 860px; margin: 0 auto; }
+  .q { border: 1px solid var(--rule); border-radius: 10px; padding: 16px 20px; margin-bottom: 14px; }
+  .q.bad { border-color: var(--no-emit); }
+  .qid { font-family: var(--hand); font-size: 22px; color: var(--accent); }
+  .txt { margin: 6px 0 12px; }
+  ul { list-style: none; padding: 0; margin: 0 0 12px; }
+  li { padding: 6px 10px; border-radius: 6px; color: var(--chalk-dim); }
+  li.right { background: var(--board-sunk); color: var(--emit); }
+  li.right::after { content: ' ← computed'; font-size: 12px; letter-spacing: .1em; color: var(--chalk-faint); }
+  .computed { font-size: 14px; color: var(--chalk-dim); }
+  .computed b { font-family: var(--hand); font-size: 20px; color: var(--chalk); }
+  .verdict { padding: 14px 18px; border-radius: 10px; margin-bottom: 20px; font-size: 16px; }
+  .verdict.ok  { border: 1px solid var(--emit);   color: var(--emit); }
+  .verdict.bad { border: 2px solid var(--no-emit); color: var(--no-emit); }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="eyebrow">dev/ — not linked from any page</div>
+  <h1>questions.js self-check</h1>
+  <p>Every answer below was <strong>computed by calling <code>physics()</code></strong>, not read
+  from a list. The highlighted option is whichever one the computed value matched.</p>
+
+  <p class="small">To prove the key is not hardcoded: set <code>HC</code> in
+  <code>physics.js</code> to <code>1000</code> and reload. Q5 must stop reading 0.80 eV and this
+  page must go red, because the new value matches no option. <strong>Put <code>HC</code>
+  back afterwards.</strong></p>
+
+  <div id="verdict" class="verdict"></div>
+  <div id="out"></div>
+
+</div>
+
+<script src="../physics.js"></script>
+<script src="../questions.js"></script>
+<script>
+const rows = checkQuestions();
+const bad = rows.filter(r => !r.ok);
+
+const v = document.getElementById('verdict');
+v.className = 'verdict ' + (bad.length ? 'bad' : 'ok');
+v.textContent = bad.length
+  ? bad.length + ' question(s) computed an answer that matches NO option: ' + bad.map(b => b.id).join(', ')
+  : 'All ' + rows.length + ' questions resolved. Every computed answer matched exactly one option.';
+
+document.getElementById('out').innerHTML = rows.map(r => {
+  const q = QUESTIONS.find(q => q.id === r.id);
+  const opts = q.options.map((o, i) =>
+    '<li class="' + (i === r.index ? 'right' : '') + '">' + o + '</li>').join('');
+  return '<div class="q ' + (r.ok ? '' : 'bad') + '">'
+       + '<span class="qid">' + r.id + '</span> <span class="small">· part ' + r.part + '</span>'
+       + '<div class="txt">' + q.text + '</div>'
+       + '<ul>' + opts + '</ul>'
+       + '<div class="computed">physics() computed: <b>' + r.computed + '</b>'
+       + (r.ok ? '' : ' — which matches none of the options above') + '</div>'
+       + '</div>';
+}).join('');
+</script>
+</body>
+</html>
