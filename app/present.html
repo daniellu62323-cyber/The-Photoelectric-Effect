@@ -6,71 +6,81 @@
 <title>The Photoelectric Effect — presentation</title>
 <link rel="stylesheet" href="theme.css">
 <style>
-/* Layout for the projected page. Everything visual comes from theme.css. */
-
 html, body { height: 100%; }
 body { display: flex; flex-direction: column; padding: 0; overflow: hidden; }
 
-/* The presenter's strip: where we are, and how much is left. Small and dim —
-   it is for the presenter, not for the room. */
-.beatbar {
-  display: flex; align-items: center; gap: 16px;
-  padding: 10px 28px;
-  border-bottom: 1px solid var(--rule-soft);
-  font-size: 13px; color: var(--chalk-dim);
+/* ---- The presenter's top bar. Everything is driven from here, by button. */
+.topbar {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  padding: 10px 20px;
+  border-bottom: 1px solid var(--rule);
+  background: var(--board-sunk);
   flex: none;
 }
-.counter { font-variant-numeric: tabular-nums; letter-spacing: .04em; }
-.dots { display: flex; gap: 4px; align-items: center; }
-.dots .grp { display: flex; gap: 2px; margin-right: 7px; }
-.dots i { width: 9px; height: 9px; border-radius: 50%; border: 1px solid var(--rule); display: block; }
-.dots i.done    { background: var(--rule); }
-.dots i.current { background: var(--accent); border-color: var(--accent); }
+.topbar button { font-size: 16px; padding: 9px 16px; }
+.topbar .sep { width: 1px; height: 26px; background: var(--rule); margin: 0 6px; }
+.topbar .where { font-size: 13px; color: var(--chalk-dim); margin-left: auto; white-space: nowrap; }
 
-.stage { flex: 1 1 auto; display: flex; flex-direction: column; padding: 18px 28px 10px;
-         max-width: 1600px; width: 100%; margin: 0 auto; min-height: 0; }
+/* Restart is armed by the first press and only fires on the second. */
+#restart.arming { border-color: var(--no-emit); color: var(--no-emit); }
 
-.head { display: flex; align-items: baseline; gap: 16px; flex: none; }
+/* A question button: plain before it is asked, lit while its question is
+   open, dimmed once it has been revealed. */
+.qbtn.open { border-color: var(--accent); color: var(--accent); background: var(--board-panel); }
+.qbtn.done { opacity: .5; }
+.qlabel { font-size: 13px; color: var(--chalk-dim); margin-right: 2px; }
+
+/* ---- Stage ------------------------------------------------------------- */
+.stage { flex: 1 1 auto; display: flex; flex-direction: column; align-items: center;
+         padding: 14px 24px 8px; max-width: 1600px; width: 100%; margin: 0 auto; min-height: 0; }
+
+.head { display: flex; align-items: baseline; gap: 14px; align-self: flex-start; flex: none; }
 .partno { font-family: var(--hand); font-size: 20px; color: var(--chalk-dim); }
-.head h1 { margin: 0; font-size: clamp(26px, 3.4vw, 44px); }
-.beatname {
-  font-size: 12px; letter-spacing: .16em; text-transform: uppercase; color: var(--accent);
-  border: 1px solid var(--accent-dim); border-radius: 999px; padding: 3px 11px; white-space: nowrap;
-}
-.beatname.single { color: var(--chalk-dim); border-color: var(--rule); }
+.head h1 { margin: 0; font-size: clamp(24px, 3.2vw, 42px); }
 
-/* The animation fills the stage. No sliders on the presentation parts: the
-   room is watching a projection, and the toy belongs at the end. The presenter
-   changes things from the keyboard so nothing clutters the screen. */
-.lab { margin-top: 12px; flex: 1 1 auto; min-height: 0;
-       display: flex; flex-direction: column; gap: 12px; align-items: center; }
+#scene { width: auto; height: auto; max-width: 100%; max-height: 58vh;
+         aspect-ratio: 880 / 460; border-radius: 10px; display: block; margin-top: 8px; }
+/* An open question needs room. The animation gives it up rather than pushing
+   the readouts off the bottom of the screen. */
+body.asking #scene { max-height: 40vh; }
 
-#scene { width: auto; height: auto; max-width: 100%; max-height: 68vh;
-         aspect-ratio: 880 / 460; border-radius: 10px; display: block; }
-
-.readouts { display: flex; gap: clamp(20px, 3vw, 52px); flex-wrap: wrap; justify-content: center; }
+.status { text-align: center; margin-top: 4px; }
+.readouts { display: flex; gap: clamp(18px, 3vw, 50px); flex-wrap: wrap; justify-content: center; }
 .readouts .readout { gap: 2px; align-items: center; }
 .readouts .value { font-size: clamp(22px, 2.8vw, 38px); }
-.status { text-align: center; }
 
-/* Part 9 only: hand over to the original simulation, untouched. */
+/* ---- The open question, shown to the room ------------------------------ */
+#question { display: none; margin-top: 8px; max-width: 1100px; text-align: center; }
+body.asking #question { display: block; }
+#question .qtext { font-family: var(--hand); font-size: clamp(22px, 2.6vw, 34px); line-height: 1.3; }
+#question .qtag { font-size: 12px; letter-spacing: .16em; text-transform: uppercase;
+                  color: var(--accent); margin-bottom: 4px; }
+
+/* Part 9 hands over to the original simulation, untouched. */
 #endcard { display: none; flex-direction: column; align-items: center; justify-content: center;
            gap: 18px; flex: 1 1 auto; text-align: center; }
 #endcard a.btn { font-size: 22px; padding: 16px 30px; text-decoration: none; }
 body.toy .lab { display: none; }
 body.toy #endcard { display: flex; }
 
-.foot { flex: none; padding: 8px 28px 12px; font-size: 12px; color: var(--chalk-faint); }
+.lab { display: flex; flex-direction: column; align-items: center; gap: 6px;
+       flex: 1 1 auto; min-height: 0; width: 100%; }
 
-#fatal { display: none; margin: 16px 28px; padding: 14px 18px;
+#fatal { display: none; margin: 16px 24px; padding: 14px 18px;
          border: 2px solid var(--no-emit); border-radius: 10px; color: var(--no-emit); }
 </style>
 </head>
 <body>
 
-<div class="beatbar">
-  <span class="counter" id="counter"></span>
-  <div class="dots" id="dots"></div>
+<div class="topbar">
+  <button type="button" id="restart">Restart</button>
+  <div class="sep"></div>
+  <button type="button" id="prev">&larr; Back</button>
+  <button type="button" id="next">Next part &rarr;</button>
+  <div class="sep"></div>
+  <span class="qlabel" id="qlabel">No question here</span>
+  <span id="qbuttons"></span>
+  <span class="where" id="where"></span>
 </div>
 
 <div id="fatal"><strong>physics.js did not load.</strong> Every number on this page comes from it.
@@ -80,24 +90,23 @@ Check that <code>physics.js</code> sits beside <code>present.html</code>.</div>
   <div class="head">
     <span class="partno" id="partno"></span>
     <h1 id="title"></h1>
-    <span class="beatname" id="beatname"></span>
   </div>
 
   <div class="lab">
     <canvas id="scene" width="880" height="460"
             aria-label="Light strikes a metal surface; electrons escape only above the energy threshold"></canvas>
+
+    <div id="question"><div class="qtag" id="qtag"></div><div class="qtext" id="qtext"></div></div>
+
     <div class="status" id="status"></div>
     <div class="readouts">
-      <div class="readout"><label>Photon energy</label><div class="value accent" id="energy">—</div></div>
-      <div class="readout"><label>Max kinetic energy</label><div class="value" id="kinetic">—</div></div>
-      <div class="readout"><label>Threshold <i class="sym">λ₀</i></label><div class="value" id="threshold">—</div></div>
-      <div class="readout"><label>Emission rate</label><div class="value" id="rate">—</div></div>
+      <div class="readout"><label>Photon energy</label><div class="value accent" id="energy">&mdash;</div></div>
+      <div class="readout"><label>Max kinetic energy</label><div class="value" id="kinetic">&mdash;</div></div>
+      <div class="readout"><label>Threshold <i class="sym">&lambda;&#8320;</i></label><div class="value" id="threshold">&mdash;</div></div>
+      <div class="readout"><label>Emission rate</label><div class="value" id="rate">&mdash;</div></div>
     </div>
-
   </div>
 
-  <!-- Part 9. The toy is index.html exactly as it has always been - not a
-       restyled copy - so what people play with is the original simulation. -->
   <div id="endcard">
     <h2>Scores</h2>
     <p class="small">Hold up your phone and compare.</p>
@@ -105,48 +114,50 @@ Check that <code>physics.js</code> sits beside <code>present.html</code>.</div>
   </div>
 </main>
 
-<!-- The simulation's state. Not shown on the presentation parts: the presenter
-     drives it from the keyboard. -->
+<!-- The simulation's parameters. Hidden for now: the user wants the original
+     controls back on this page, to be settled in a later task. -->
 <div hidden>
   <select id="material"></select>
   <input id="wave" type="range" min="180" max="800" step="1" value="400">
   <input id="intensity" type="range" min="0" max="100" step="1" value="50">
 </div>
 
-<div class="foot">→ / ← move · Space advances · Home restarts &nbsp;|&nbsp;
-  live: ↑ ↓ brightness · [ ] wavelength · 1–4 metal · R resets the part</div>
-
 <script src="physics.js"></script>
 <script>
 const $ = id => document.getElementById(id);
 
-/* ---- The ten parts -----------------------------------------------------
-   `question: true` means the part carries at least one quiz question and so
-   splits into two beats (SPEC.md §2):
-     setup  — situation shown, answering readouts masked, question open;
-     reveal — the answer runs.
-   `preset` is applied on entering the part. Presets are provisional here;
-   tasks 7–9 set them alongside the content they belong to. */
+/* ---- The ten parts, and the questions each one carries ------------------
+   Question text is from SPEC.md §4. Opening a question masks the readouts
+   that would answer it, so the projector cannot give the answer away while
+   the room is still answering. */
 const PARTS = [
-  { title: 'Join',              question: false, preset: { phi: 2.30, wave: 400, intensity: 50  } },
-  { title: 'Intro',             question: false, preset: { phi: 2.30, wave: 400, intensity: 50  } },
-  { title: 'The puzzle',        question: true,  preset: { phi: 2.30, wave: 700, intensity: 100 } },
-  { title: 'Light in packets',  question: true,  preset: { phi: 2.30, wave: 400, intensity: 50  } },
-  { title: 'The work function', question: true,  preset: { phi: 4.30, wave: 400, intensity: 50  } },
-  { title: 'The threshold',     question: true,  preset: { phi: 4.30, wave: 300, intensity: 60  } },
-  { title: 'Leftover energy',   question: true,  preset: { phi: 2.30, wave: 400, intensity: 50  } },
-  { title: 'The straight line', question: false, preset: { phi: 2.30, wave: 400, intensity: 50  } },
-  { title: 'Why it matters',    question: false, preset: { phi: 2.30, wave: 400, intensity: 50  } },
-  { title: 'Scores, then play', question: false, preset: { phi: 2.30, wave: 400, intensity: 50  } }
+  { title: 'Join',  preset: { phi: 2.30, wave: 400, intensity: 50 }, questions: [] },
+  { title: 'Intro', preset: { phi: 2.30, wave: 400, intensity: 50 }, questions: [] },
+  { title: 'The puzzle', preset: { phi: 2.30, wave: 700, intensity: 100 }, questions: [
+      { id: 'Q1', text: 'Sodium, red light at 700 nm. We turn the brightness to maximum. What happens?',
+        mask: ['status', 'energy', 'kinetic', 'rate', 'threshold'] } ] },
+  { title: 'Light in packets', preset: { phi: 2.30, wave: 400, intensity: 50 }, questions: [
+      { id: 'Q2', text: 'Which photon carries more energy — 400 nm violet, or 700 nm red?',
+        mask: ['energy'] } ] },
+  { title: 'The work function', preset: { phi: 4.30, wave: 400, intensity: 50 }, questions: [
+      { id: 'Q3', text: 'Cesium needs 2.14 eV to release an electron; copper needs 4.70 eV. Which one needs shorter-wavelength light?',
+        mask: [] } ] },
+  { title: 'The threshold', preset: { phi: 4.30, wave: 300, intensity: 60 }, questions: [
+      { id: 'Q4', text: 'Zinc needs 4.30 eV. What is the longest wavelength that still releases an electron?',
+        mask: ['threshold', 'status'] } ] },
+  { title: 'Leftover energy', preset: { phi: 2.30, wave: 400, intensity: 50 }, questions: [
+      { id: 'Q5', text: 'Sodium needs 2.30 eV. Each photon delivers 3.10 eV. What is the maximum kinetic energy?',
+        mask: ['kinetic'] },
+      { id: 'Q6', text: 'Same light, now twice as bright. What is the maximum kinetic energy now?',
+        mask: ['kinetic'] } ] },
+  { title: 'The straight line', preset: { phi: 2.30, wave: 400, intensity: 50 }, questions: [] },
+  { title: 'Why it matters',   preset: { phi: 2.30, wave: 400, intensity: 50 }, questions: [] },
+  { title: 'Scores, then play', preset: { phi: 2.30, wave: 400, intensity: 50 }, questions: [] }
 ];
 
-const BEATS = [];
-PARTS.forEach((p, i) => {
-  if (p.question) { BEATS.push({ part: i, beat: 'setup' }); BEATS.push({ part: i, beat: 'reveal' }); }
-  else            { BEATS.push({ part: i, beat: 'single' }); }
-});
-
-let at = 0;
+let part = 0;      /* which part is on screen */
+let openQ = null;  /* index into PARTS[part].questions, or null */
+const asked = new Set();
 let state = null;
 
 /* ---- The scene ---------------------------------------------------------
@@ -164,6 +175,11 @@ function laserTarget() { return { x: 240 + 135 * Math.tan(LASER_ANGLE * Math.PI 
 const canvas = $('scene'), ctx = canvas.getContext('2d');
 let photons = [], electrons = [], impacts = [], photonClock = 0, sequence = 0;
 let last = 0;
+
+/* Set while a question masking the status is open. The canvas prints its own
+   verdict ("Not enough energy to escape"), which gives the answer away just as
+   plainly as a readout does, so it is suppressed too. */
+let hideVerdict = false;
 
 /* Replaced in task 6: this mapping renders 700 nm as amber and 650 nm as
    yellow-green, and part 2's whole premise is that the light looks red. */
@@ -295,9 +311,11 @@ function drawScene() {
     c.restore();
   }
 
-  c.font = '16px system-ui';
-  c.fillStyle = lit ? (s.emits ? '#9debe4' : '#e5bb76') : '#c5b69d';
-  c.fillText(!lit ? 'Laser off' : s.emits ? 'Energy left over → motion!' : 'Not enough energy to escape', 470, 103);
+  if (!hideVerdict) {
+    c.font = '16px system-ui';
+    c.fillStyle = lit ? (s.emits ? '#9debe4' : '#e5bb76') : '#c5b69d';
+    c.fillText(!lit ? 'Laser off' : s.emits ? 'Energy left over → motion!' : 'Not enough energy to escape', 470, 103);
+  }
   c.font = '14px system-ui'; c.fillStyle = '#a5b7ba';
   c.fillText(lit ? 'Each wave packet represents one photon.' : 'Turn up the intensity to switch on the laser.', 37, 439);
 }
@@ -321,7 +339,7 @@ function buildMaterials() {
   /* Built from MATERIALS in physics.js rather than typed here, so the work
      functions cannot drift from the ones the answer key uses. */
   $('material').innerHTML = MATERIALS
-    .map(m => `<option value="${m.phi.toFixed(2)}">${m.name} · ${m.phi.toFixed(2)} eV</option>`)
+    .map(m => '<option value="' + m.phi.toFixed(2) + '">' + m.name + ' · ' + m.phi.toFixed(2) + ' eV</option>')
     .join('');
 }
 
@@ -336,7 +354,6 @@ function update() {
   $('kinetic').textContent   = s.k > 0 ? s.k.toFixed(2) + ' eV' : '—';
   $('threshold').textContent = s.threshold.toFixed(1) + ' nm';
   $('rate').textContent      = s.rate.toFixed(2) + '×';
-
   $('kinetic').className = 'value ' + (s.k > 0 ? 'emit' : 'none');
 
   const st = $('status');
@@ -345,6 +362,23 @@ function update() {
     : s.emits ? 'Emission · photon energy exceeds the work function'
               : 'No emission · photon energy does not exceed the work function';
   st.className = 'status ' + (s.emits ? 'emit' : 'none');
+
+  applyMask();
+}
+
+/* Masking is the ask/reveal mechanism. While a question is open, the readouts
+   that would answer it are hidden — otherwise the projector answers the
+   question while the room is still thinking about it. */
+function applyMask() {
+  const ids = ['status', 'energy', 'kinetic', 'threshold', 'rate'];
+  const q = openQ === null ? null : PARTS[part].questions[openQ];
+  hideVerdict = q ? q.mask.indexOf('status') !== -1 : false;
+  ids.forEach(id => {
+    const el = $(id);
+    const hide = q ? q.mask.indexOf(id) !== -1 : false;
+    if (id === 'status') el.style.visibility = hide ? 'hidden' : '';
+    else el.classList.toggle('masked', hide);
+  });
 }
 
 function applyPreset(p) {
@@ -355,85 +389,88 @@ function applyPreset(p) {
   update();
 }
 
-/* ---- Beats -------------------------------------------------------------- */
+/* ---- The top bar -------------------------------------------------------- */
 
-function buildDots() {
-  $('dots').innerHTML = PARTS.map(p => '<span class="grp">' + '<i></i>'.repeat(p.question ? 2 : 1) + '</span>').join('');
+function renderQuestionButtons() {
+  const qs = PARTS[part].questions;
+  $('qlabel').textContent = qs.length === 0 ? 'No question here'
+                          : qs.length === 1 ? 'Question:' : 'Questions:';
+  $('qbuttons').innerHTML = qs
+    .map((q, i) => '<button type="button" class="qbtn" data-i="' + i + '">' + q.id + '</button>')
+    .join(' ');
+  $('qbuttons').querySelectorAll('button').forEach(b =>
+    b.onclick = () => toggleQuestion(+b.dataset.i));
+  paintQuestionButtons();
 }
 
-function render(enteredNewPart) {
-  const b = BEATS[at], p = PARTS[b.part];
-
-  $('partno').textContent = b.part + ' /';
-  $('title').textContent = p.title;
-
-  const name = $('beatname');
-  name.textContent = b.beat === 'single' ? 'one beat' : b.beat;
-  name.classList.toggle('single', b.beat === 'single');
-
-  $('counter').textContent = 'beat ' + (at + 1) + ' of ' + BEATS.length;
-
-  /* The last part hands over to index.html, the original toy. */
-  document.body.classList.toggle('toy', b.part === PARTS.length - 1);
-
-  $('dots').querySelectorAll('i').forEach((d, i) => {
-    d.classList.toggle('done', i < at);
-    d.classList.toggle('current', i === at);
+function paintQuestionButtons() {
+  $('qbuttons').querySelectorAll('button').forEach(b => {
+    const i = +b.dataset.i, q = PARTS[part].questions[i];
+    b.classList.toggle('open', openQ === i);
+    b.classList.toggle('done', openQ !== i && asked.has(q.id));
+    b.textContent = openQ === i ? q.id + ' — reveal' : q.id;
   });
-
-  /* Only re-apply the preset when the PART changes. Moving between a part's
-     two beats must not throw away what the presenter just dragged. */
-  if (enteredNewPart) applyPreset(p.preset);
 }
 
-function go(delta) {
-  const next = at + delta;
-  if (next < 0 || next >= BEATS.length) return;   // ends are walls, not wraps
-  const wasPart = BEATS[at].part;
-  at = next;
-  render(BEATS[at].part !== wasPart);
+/* First press asks the question; second press reveals the answer. */
+function toggleQuestion(i) {
+  const q = PARTS[part].questions[i];
+  if (openQ === i) { openQ = null; asked.add(q.id); }
+  else { openQ = i; $('qtag').textContent = q.id; $('qtext').textContent = q.text; }
+  document.body.classList.toggle('asking', openQ !== null);
+  paintQuestionButtons();
+  applyMask();
 }
 
-/* Live changes from the keyboard, so the projected screen stays clean.
-   The presenter needs these: part 6's point is raising the brightness and
-   watching Kmax refuse to move. */
-function nudge(id, delta, lo, hi) {
-  const el = $(id);
-  el.value = Math.min(hi, Math.max(lo, +el.value + delta));
-  clearParticles(); update();
-}
-
-addEventListener('keydown', e => {
-  /* PageUp/PageDown because most presentation clickers send those, not arrows. */
-  switch (e.key) {
-    case 'ArrowRight': case 'PageDown': case ' ': go(1);  break;
-    case 'ArrowLeft':  case 'PageUp':            go(-1); break;
-    case 'ArrowUp':   nudge('intensity',  10, 0, 100);  break;
-    case 'ArrowDown': nudge('intensity', -10, 0, 100);  break;
-    case ']':         nudge('wave',       10, 180, 800); break;
-    case '[':         nudge('wave',      -10, 180, 800); break;
-    case '1': case '2': case '3': case '4': {
-      const m = MATERIALS[+e.key - 1];
-      if (m) { $('material').value = m.phi.toFixed(2); clearParticles(); update(); }
-      break;
-    }
-    case 'r': case 'R': applyPreset(PARTS[BEATS[at].part].preset); break;
-    case 'Home': { const w = BEATS[at].part; at = 0; render(BEATS[0].part !== w || true); break; }
-    case 'End':  { const w = BEATS[at].part; at = BEATS.length - 1; render(BEATS[at].part !== w); break; }
-    default: return;
+function render(newPart) {
+  $('partno').textContent = part + ' /';
+  $('title').textContent  = PARTS[part].title;
+  $('where').textContent  = 'part ' + part + ' of ' + (PARTS.length - 1);
+  document.body.classList.toggle('toy', part === PARTS.length - 1);
+  $('prev').disabled = part === 0;
+  $('next').disabled = part === PARTS.length - 1;
+  if (newPart) {
+    openQ = null;
+    document.body.classList.remove('asking');
+    renderQuestionButtons();
+    applyPreset(PARTS[part].preset);
   }
-  e.preventDefault();
-});
+}
 
-['material', 'wave', 'intensity'].forEach(id =>
-  $(id).addEventListener('input', () => { clearParticles(); update(); }));
+function goPart(delta) {
+  const next = part + delta;
+  if (next < 0 || next >= PARTS.length) return;
+  part = next;
+  render(true);
+}
 
+$('next').onclick = () => goPart(1);
+$('prev').onclick = () => goPart(-1);
+
+/* Restart needs a second press. One stray click mid-presentation should not
+   wipe the room's progress, and the armed state times out on its own. */
+let arming = null;
+function disarm() {
+  arming = null;
+  $('restart').classList.remove('arming');
+  $('restart').textContent = 'Restart';
+}
+$('restart').onclick = () => {
+  if (arming) {
+    clearTimeout(arming);
+    disarm();
+    part = 0; asked.clear(); render(true);
+    return;
+  }
+  $('restart').classList.add('arming');
+  $('restart').textContent = 'Are you sure?';
+  arming = setTimeout(disarm, 4000);
+};
 
 if (typeof physics !== 'function' || typeof HC === 'undefined' || typeof MATERIALS === 'undefined') {
   $('fatal').style.display = 'block';
 } else {
   buildMaterials();
-  buildDots();
   render(true);
   requestAnimationFrame(animate);
 }
