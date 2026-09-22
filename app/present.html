@@ -9,66 +9,57 @@
 /* Layout for the projected page. Everything visual comes from theme.css. */
 
 html, body { height: 100%; }
-body { display: flex; flex-direction: column; padding: 0; }
+body { display: flex; flex-direction: column; padding: 0; overflow: hidden; }
 
 /* The presenter's strip: where we are, and how much is left. Small and dim —
    it is for the presenter, not for the room. */
 .beatbar {
   display: flex; align-items: center; gap: 16px;
-  padding: 12px 28px;
+  padding: 10px 28px;
   border-bottom: 1px solid var(--rule-soft);
   font-size: 13px; color: var(--chalk-dim);
   flex: none;
 }
 .counter { font-variant-numeric: tabular-nums; letter-spacing: .04em; }
-
-/* One dot per beat, grouped by part, so the presenter can see at a glance
-   that a part has a second beat coming. */
 .dots { display: flex; gap: 4px; align-items: center; }
 .dots .grp { display: flex; gap: 2px; margin-right: 7px; }
-.dots i {
-  width: 9px; height: 9px; border-radius: 50%;
-  border: 1px solid var(--rule); display: block;
-}
+.dots i { width: 9px; height: 9px; border-radius: 50%; border: 1px solid var(--rule); display: block; }
 .dots i.done    { background: var(--rule); }
 .dots i.current { background: var(--accent); border-color: var(--accent); }
 
-.stage {
-  flex: 1 1 auto;
-  display: flex; flex-direction: column; justify-content: center;
-  padding: 40px 48px;
-  max-width: 1400px; width: 100%; margin: 0 auto;
-}
+.stage { flex: 1 1 auto; display: flex; flex-direction: column; padding: 18px 28px 10px;
+         max-width: 1600px; width: 100%; margin: 0 auto; min-height: 0; }
 
-.partno {
-  font-family: var(--hand);
-  font-size: 22px; color: var(--chalk-dim); margin-bottom: 4px;
-}
-.stage h1 { margin-bottom: 10px; }
-
+.head { display: flex; align-items: baseline; gap: 16px; flex: none; }
+.partno { font-family: var(--hand); font-size: 20px; color: var(--chalk-dim); }
+.head h1 { margin: 0; font-size: clamp(26px, 3.4vw, 44px); }
 .beatname {
-  display: inline-block; align-self: flex-start;
-  font-size: 13px; letter-spacing: .16em; text-transform: uppercase;
-  color: var(--accent);
-  border: 1px solid var(--accent-dim); border-radius: 999px;
-  padding: 4px 12px;
+  font-size: 12px; letter-spacing: .16em; text-transform: uppercase; color: var(--accent);
+  border: 1px solid var(--accent-dim); border-radius: 999px; padding: 3px 11px; white-space: nowrap;
 }
 .beatname.single { color: var(--chalk-dim); border-color: var(--rule); }
 
-.placeholder {
-  margin-top: 40px; padding: 40px;
-  border: 2px dashed var(--rule); border-radius: 12px;
-  color: var(--chalk-faint); font-size: 15px;
-  max-width: 640px;
-}
+/* Scene on the left, controls on the right. The controls belong to the
+   presenter: the audience is watching a projection and cannot touch them. */
+.lab { display: grid; grid-template-columns: minmax(0,1fr) 280px; gap: 22px;
+       margin-top: 14px; flex: 1 1 auto; min-height: 0; }
+@media (max-width: 1100px) { .lab { grid-template-columns: 1fr; } }
 
-.hint { padding: 12px 28px; font-size: 13px; color: var(--chalk-faint); flex: none; }
+.scene-wrap { min-width: 0; display: flex; flex-direction: column; gap: 10px; }
+#scene { width: 100%; height: auto; max-height: 56vh; border-radius: 10px;
+         border: 1px solid var(--rule); display: block; }
 
-/* Shown only if physics.js failed to load. Silence would be worse. */
-#fatal {
-  display: none; margin: 24px 48px; padding: 16px 20px;
-  border: 2px solid var(--no-emit); border-radius: 10px; color: var(--no-emit);
-}
+.readouts { display: flex; gap: 26px; flex-wrap: wrap; }
+.readouts .readout { gap: 2px; }
+.readouts .value { font-size: clamp(20px, 2.4vw, 32px); }
+
+.controls { display: flex; flex-direction: column; gap: 14px; overflow-y: auto; }
+.controls .hint { font-size: 12px; color: var(--chalk-faint); margin: -8px 0 0; }
+
+.foot { flex: none; padding: 8px 28px 12px; font-size: 12px; color: var(--chalk-faint); }
+
+#fatal { display: none; margin: 16px 28px; padding: 14px 18px;
+         border: 2px solid var(--no-emit); border-radius: 10px; color: var(--no-emit); }
 </style>
 </head>
 <body>
@@ -82,38 +73,71 @@ body { display: flex; flex-direction: column; padding: 0; }
 Check that <code>physics.js</code> sits beside <code>present.html</code>.</div>
 
 <main class="stage">
-  <div class="partno" id="partno"></div>
-  <h1 id="title"></h1>
-  <span class="beatname" id="beatname"></span>
-  <div class="placeholder" id="placeholder"></div>
+  <div class="head">
+    <span class="partno" id="partno"></span>
+    <h1 id="title"></h1>
+    <span class="beatname" id="beatname"></span>
+  </div>
+
+  <div class="lab">
+    <div class="scene-wrap">
+      <canvas id="scene" width="880" height="460"
+              aria-label="Light strikes a metal surface; electrons escape only above the energy threshold"></canvas>
+      <div class="status" id="status"></div>
+      <div class="readouts">
+        <div class="readout"><label>Photon energy</label><div class="value accent" id="energy">—</div></div>
+        <div class="readout"><label>Max kinetic energy</label><div class="value" id="kinetic">—</div></div>
+        <div class="readout"><label>Threshold <i class="sym">λ₀</i></label><div class="value" id="threshold">—</div></div>
+        <div class="readout"><label>Emission rate</label><div class="value" id="rate">—</div></div>
+      </div>
+    </div>
+
+    <aside class="controls">
+      <div>
+        <label for="material">Metal surface</label>
+        <select id="material"></select>
+      </div>
+      <div>
+        <label for="wave">Wavelength <i class="sym">λ</i> — <span id="waveValue"></span></label>
+        <input id="wave" type="range" min="180" max="800" step="1" value="400">
+        <p class="hint">180 nm UV · 800 nm infrared</p>
+      </div>
+      <div>
+        <label for="intensity">Light intensity — <span id="intensityValue"></span></label>
+        <input id="intensity" type="range" min="0" max="100" step="1" value="50">
+        <p class="hint">Brightness changes how many photons arrive, never their energy.</p>
+      </div>
+      <button type="button" id="represet">Reset this part</button>
+    </aside>
+  </div>
 </main>
 
-<div class="hint">→ / ← or PageDown / PageUp to move · Space advances · Home returns to the start</div>
+<div class="foot">→ / ← or PageDown / PageUp to move · Space advances · Home returns to the start</div>
 
 <script src="physics.js"></script>
 <script>
-/* The ten parts. `question: true` means the part carries at least one quiz
-   question, and therefore splits into two beats — SPEC.md §2:
-     setup  — the situation is shown, the answering readouts are masked, the
-              animation is held, and the question is open on the phones;
+const $ = id => document.getElementById(id);
+
+/* ---- The ten parts -----------------------------------------------------
+   `question: true` means the part carries at least one quiz question and so
+   splits into two beats (SPEC.md §2):
+     setup  — situation shown, answering readouts masked, question open;
      reveal — the answer runs.
-   Without that split the projector shows the answer while the question is
-   being asked, which is what made six of nine questions meaningless in v1. */
+   `preset` is applied on entering the part. Presets are provisional here;
+   tasks 7–9 set them alongside the content they belong to. */
 const PARTS = [
-  { title: 'Join',              question: false },
-  { title: 'Intro',             question: false },
-  { title: 'The puzzle',        question: true  },
-  { title: 'Light in packets',  question: true  },
-  { title: 'The work function', question: true  },
-  { title: 'The threshold',     question: true  },
-  { title: 'Leftover energy',   question: true  },
-  { title: 'The straight line', question: false },
-  { title: 'Why it matters',    question: false },
-  { title: 'Scores, then play', question: false }
+  { title: 'Join',              question: false, preset: { phi: 2.30, wave: 400, intensity: 50  } },
+  { title: 'Intro',             question: false, preset: { phi: 2.30, wave: 400, intensity: 50  } },
+  { title: 'The puzzle',        question: true,  preset: { phi: 2.30, wave: 700, intensity: 100 } },
+  { title: 'Light in packets',  question: true,  preset: { phi: 2.30, wave: 400, intensity: 50  } },
+  { title: 'The work function', question: true,  preset: { phi: 4.30, wave: 400, intensity: 50  } },
+  { title: 'The threshold',     question: true,  preset: { phi: 4.30, wave: 300, intensity: 60  } },
+  { title: 'Leftover energy',   question: true,  preset: { phi: 2.30, wave: 400, intensity: 50  } },
+  { title: 'The straight line', question: false, preset: { phi: 2.30, wave: 400, intensity: 50  } },
+  { title: 'Why it matters',    question: false, preset: { phi: 2.30, wave: 400, intensity: 50  } },
+  { title: 'Scores, then play', question: false, preset: { phi: 2.30, wave: 400, intensity: 50  } }
 ];
 
-/* Flatten parts into the beat sequence the arrow keys actually walk.
-   Ten parts, five of which split, gives fifteen beats. */
 const BEATS = [];
 PARTS.forEach((p, i) => {
   if (p.question) { BEATS.push({ part: i, beat: 'setup' }); BEATS.push({ part: i, beat: 'reveal' }); }
@@ -121,17 +145,223 @@ PARTS.forEach((p, i) => {
 });
 
 let at = 0;
+let state = null;
 
-const $ = id => document.getElementById(id);
+/* ---- The scene ---------------------------------------------------------
+   Ported from index.html. The incidence angle θ is GONE, not hidden: it
+   appears nowhere in physics() and changes no result, so presenting it as a
+   control implies a relevance it does not have (SPEC.md §2). Removing it is
+   drawing-code surgery rather than deleting a slider, because laserAngle also
+   drives laserTarget(), which sets photon spawn targets and the electron
+   launch angle. So the angle is frozen at the value the old page opened with
+   and the arc, the label, the normal line and the aiming affordance are cut. */
+const LASER_ANGLE = 68;
+const laserOrigin = { x: 240, y: 200 };
+function laserTarget() { return { x: 240 + 135 * Math.tan(LASER_ANGLE * Math.PI / 180), y: 335 }; }
 
-function buildDots() {
-  $('dots').innerHTML = PARTS.map((p, i) => {
-    const n = p.question ? 2 : 1;
-    return '<span class="grp">' + '<i></i>'.repeat(n) + '</span>';
-  }).join('');
+const canvas = $('scene'), ctx = canvas.getContext('2d');
+let photons = [], electrons = [], impacts = [], photonClock = 0, sequence = 0;
+let last = 0;
+
+/* Replaced in task 6: this mapping renders 700 nm as amber and 650 nm as
+   yellow-green, and part 2's whole premise is that the light looks red. */
+function lightColor(w) {
+  if (w < 380) return '#b69aff';
+  if (w > 750) return '#d86b58';
+  const hue = 270 - (w - 380) / (750 - 380) * 270;
+  return `hsl(${hue},85%,68%)`;
 }
 
-function render() {
+function clearParticles() { photons = []; electrons = []; impacts = []; photonClock = 0; }
+
+function spawnPhoton() {
+  const n = sequence++, target = laserTarget();
+  photons.push({ x: laserOrigin.x, y: laserOrigin.y, tx: target.x + (n % 3 - 1) * 3, ty: target.y,
+                 p: 0, energy: state.energy, wavelength: state.wavelength });
+}
+
+function advanceParticles(dt) {
+  if (!state) return;
+  /* Photon ARRIVAL is deliberately ungated: photons keep landing below
+     threshold and simply fail to free anything. Part 2 depends on the room
+     seeing light arrive and nothing come off. */
+  const flux = state.intensity / 50 * state.wavelength / 400 * 5;
+  if (flux > 0) { photonClock += dt * flux; while (photonClock >= 1) { spawnPhoton(); photonClock--; } }
+  for (const p of photons) {
+    p.p += dt / .95;
+    if (p.p >= 1) {
+      const k = p.energy - state.phi;
+      impacts.push({ x: p.tx, y: p.ty, age: 0, success: k > 0 });
+      if (k > 0) electrons.push({ x: p.tx, y: p.ty - 5, v: 95 * Math.sqrt(k),
+                                  angle: -1.35 + (p.tx - 490) / 245 * .6, age: 0, trail: [] });
+    }
+  }
+  photons = photons.filter(p => p.p < 1);
+  for (const e of electrons) {
+    e.trail.push({ x: e.x, y: e.y }); if (e.trail.length > 8) e.trail.shift();
+    e.x += Math.cos(e.angle) * e.v * dt; e.y += Math.sin(e.angle) * e.v * dt; e.age += dt;
+  }
+  electrons = electrons.filter(e => e.y > 40 && e.x < 855 && e.age < 9);
+  for (const i of impacts) i.age += dt;
+  impacts = impacts.filter(i => i.age < .55);
+}
+
+function drawScene() {
+  if (!state) return;
+  const s = state, c = ctx, lit = s.intensity > 0, color = lightColor(s.wavelength);
+  const HAND = '"Schoolbell", system-ui, sans-serif';
+
+  c.clearRect(0, 0, 880, 460);
+  const bg = c.createLinearGradient(0, 0, 0, 460);
+  bg.addColorStop(0, '#171d1a'); bg.addColorStop(1, '#0e1211');
+  c.fillStyle = bg; c.fillRect(0, 0, 880, 460);
+
+  c.strokeStyle = '#ffffff06'; c.lineWidth = 1;
+  for (let x = 30; x < 880; x += 40) { c.beginPath(); c.moveTo(x, 50); c.lineTo(x, 410); c.stroke(); }
+  for (let y = 50; y < 430; y += 40) { c.beginPath(); c.moveTo(25, y); c.lineTo(855, y); c.stroke(); }
+
+  c.font = '17px ' + HAND; c.fillStyle = '#a9b0a6';
+  c.fillText('1  laser', 40, 37);
+  c.fillText('2  photons arrive', 310, 37);
+  c.fillText('3  electrons escape?', 620, 37);
+
+  const target = laserTarget();
+  const beamAngle = Math.atan2(target.y - laserOrigin.y, target.x - laserOrigin.x);
+
+  if (lit) {
+    c.save(); c.strokeStyle = color; c.globalAlpha = .12 + .32 * s.intensity / 100;
+    c.shadowColor = color; c.shadowBlur = 18; c.lineWidth = 10;
+    c.beginPath(); c.moveTo(laserOrigin.x, laserOrigin.y); c.lineTo(target.x, target.y); c.stroke();
+    c.globalAlpha = .4 + .5 * s.intensity / 100; c.lineWidth = 2; c.stroke(); c.restore();
+  }
+
+  const plate = c.createLinearGradient(0, 335, 0, 370);
+  plate.addColorStop(0, '#c0d4d8'); plate.addColorStop(.18, '#718b94'); plate.addColorStop(1, '#34454e');
+  c.fillStyle = plate; c.fillRect(440, 335, 370, 31);
+  c.fillStyle = '#d9e5e7'; c.fillRect(440, 332, 370, 4);
+  c.strokeStyle = '#afc4cd55';
+  for (let x = 450; x < 810; x += 14) { c.beginPath(); c.moveTo(x, 342); c.lineTo(x + 8, 358); c.stroke(); }
+
+  c.font = '20px ' + HAND; c.fillStyle = '#f0efe6';
+  c.fillText(materialName() + ' surface', 453, 400);
+  c.font = '17px ' + HAND; c.fillStyle = '#e5bb76';
+  c.fillText('escape energy ' + s.phi.toFixed(2) + ' eV', 453, 427);
+
+  /* The laser body. Its angle is fixed, so this no longer rotates with a
+     control — it is drawn once at LASER_ANGLE to keep the beam geometry. */
+  c.save(); c.translate(laserOrigin.x, laserOrigin.y); c.rotate(beamAngle);
+  const barrel = c.createLinearGradient(0, -16, 0, 16);
+  barrel.addColorStop(0, '#aabcc6'); barrel.addColorStop(.25, '#e0e8ec');
+  barrel.addColorStop(.55, '#60747e'); barrel.addColorStop(1, '#283e49');
+  c.fillStyle = barrel; c.beginPath(); c.roundRect(-175, -15, 165, 30, 10); c.fill();
+  c.fillStyle = '#253b47'; c.fillRect(-42, -15, 28, 30);
+  c.fillStyle = '#c4d4dc'; c.fillRect(-14, -11, 14, 22);
+  c.fillStyle = lit ? color : '#253b47'; c.fillRect(-2, -7, 4, 14);
+  c.fillStyle = lit ? '#9debe4' : '#69808a'; c.beginPath(); c.roundRect(-105, -20, 24, 7, 3); c.fill();
+  c.restore();
+
+  /* The illuminated spot. The θ arc, the θ label, the "normal" dashed line and
+     "Drag the spot to aim" all went with the angle control. */
+  c.save(); c.strokeStyle = lit ? color : '#82949b'; c.lineWidth = 2;
+  c.beginPath(); c.ellipse(target.x, 335, 15, 6, 0, 0, Math.PI * 2); c.stroke(); c.restore();
+
+  for (const p of photons) {
+    const x = p.x + (p.tx - p.x) * p.p, y = p.y + (p.ty - p.y) * p.p;
+    const a = Math.atan2(p.ty - p.y, p.tx - p.x);
+    c.save(); c.translate(x, y); c.rotate(a);
+    c.strokeStyle = lightColor(p.wavelength); c.lineWidth = 2.5;
+    c.shadowBlur = 7; c.shadowColor = c.strokeStyle; c.beginPath();
+    const period = 7 + 14 * (p.wavelength - 180) / 620;
+    for (let j = -15; j <= 15; j++) {
+      const yy = Math.sin((j + 15) / period * Math.PI * 2) * 5;
+      j === -15 ? c.moveTo(j, yy) : c.lineTo(j, yy);
+    }
+    c.stroke(); c.restore();
+  }
+
+  for (const i of impacts) {
+    c.save(); c.globalAlpha = Math.max(0, 1 - i.age / .55);
+    c.strokeStyle = i.success ? '#9debe4' : '#e5bb76'; c.lineWidth = 2;
+    c.beginPath(); c.arc(i.x, i.y, 4 + i.age * 30, Math.PI, Math.PI * 2); c.stroke(); c.restore();
+  }
+
+  for (const e of electrons) {
+    c.save(); c.strokeStyle = '#93d9db66'; c.lineWidth = 2; c.beginPath();
+    e.trail.forEach((p, i) => i ? c.lineTo(p.x, p.y) : c.moveTo(p.x, p.y)); c.stroke();
+    c.fillStyle = '#9debe4'; c.shadowColor = '#93d9db'; c.shadowBlur = 12;
+    c.beginPath(); c.arc(e.x, e.y, 7, 0, Math.PI * 2); c.fill(); c.shadowBlur = 0;
+    c.strokeStyle = '#12383a'; c.beginPath(); c.moveTo(e.x - 3, e.y); c.lineTo(e.x + 3, e.y); c.stroke();
+    c.restore();
+  }
+
+  c.font = '19px ' + HAND;
+  c.fillStyle = lit ? (s.emits ? '#9debe4' : '#e5bb76') : '#a9b0a6';
+  c.fillText(!lit ? 'laser off' : s.emits ? 'energy left over → motion!' : 'not enough energy to escape', 470, 103);
+}
+
+function animate(t) {
+  const dt = last ? Math.min((t - last) / 1000, .05) : 0;
+  last = t;
+  advanceParticles(dt);
+  drawScene();
+  requestAnimationFrame(animate);
+}
+
+/* ---- Controls ---------------------------------------------------------- */
+
+function materialName() {
+  const m = MATERIALS.find(m => m.phi === +$('material').value);
+  return m ? m.name : 'Custom metal';
+}
+
+function buildMaterials() {
+  /* Built from MATERIALS in physics.js rather than typed here, so the work
+     functions cannot drift from the ones the answer key uses. */
+  $('material').innerHTML = MATERIALS
+    .map(m => `<option value="${m.phi.toFixed(2)}">${m.name} · ${m.phi.toFixed(2)} eV</option>`)
+    .join('');
+}
+
+function update() {
+  const phi = +$('material').value, wave = +$('wave').value, intensity = +$('intensity').value;
+  state = physics(wave, intensity, phi);
+  const s = state;
+
+  document.documentElement.style.setProperty('--accent', lightColor(wave));
+
+  $('waveValue').textContent = wave + ' nm';
+  $('intensityValue').textContent = intensity + '%';
+
+  $('energy').textContent    = s.energy.toFixed(2) + ' eV';
+  $('kinetic').textContent   = s.k > 0 ? s.k.toFixed(2) + ' eV' : '—';
+  $('threshold').textContent = s.threshold.toFixed(1) + ' nm';
+  $('rate').textContent      = s.rate.toFixed(2) + '×';
+
+  $('kinetic').className = 'value ' + (s.k > 0 ? 'emit' : 'none');
+
+  const st = $('status');
+  st.textContent = intensity === 0
+    ? 'Laser off · no photons arriving'
+    : s.emits ? 'Emission · photon energy exceeds the work function'
+              : 'No emission · photon energy does not exceed the work function';
+  st.className = 'status ' + (s.emits ? 'emit' : 'none');
+}
+
+function applyPreset(p) {
+  $('material').value = p.phi.toFixed(2);
+  $('wave').value = p.wave;
+  $('intensity').value = p.intensity;
+  clearParticles();
+  update();
+}
+
+/* ---- Beats -------------------------------------------------------------- */
+
+function buildDots() {
+  $('dots').innerHTML = PARTS.map(p => '<span class="grp">' + '<i></i>'.repeat(p.question ? 2 : 1) + '</span>').join('');
+}
+
+function render(enteredNewPart) {
   const b = BEATS[at], p = PARTS[b.part];
 
   $('partno').textContent = b.part + ' /';
@@ -143,43 +373,49 @@ function render() {
 
   $('counter').textContent = 'beat ' + (at + 1) + ' of ' + BEATS.length;
 
-  $('placeholder').textContent = b.beat === 'setup'
-    ? 'Setup beat. The question is open on the phones and the answering readouts are masked. Content arrives in tasks 7–9.'
-    : b.beat === 'reveal'
-      ? 'Reveal beat. The animation runs and the readouts appear. Content arrives in tasks 7–9.'
-      : 'Content arrives in tasks 7–9.';
-
-  const dots = $('dots').querySelectorAll('i');
-  dots.forEach((d, i) => {
+  $('dots').querySelectorAll('i').forEach((d, i) => {
     d.classList.toggle('done', i < at);
     d.classList.toggle('current', i === at);
   });
+
+  /* Only re-apply the preset when the PART changes. Moving between a part's
+     two beats must not throw away what the presenter just dragged. */
+  if (enteredNewPart) applyPreset(p.preset);
 }
 
 function go(delta) {
   const next = at + delta;
   if (next < 0 || next >= BEATS.length) return;   // ends are walls, not wraps
+  const wasPart = BEATS[at].part;
   at = next;
-  render();
+  render(BEATS[at].part !== wasPart);
 }
 
 addEventListener('keydown', e => {
+  /* PageUp/PageDown because most presentation clickers send those, not arrows. */
   switch (e.key) {
-    /* Arrows, and PageUp/PageDown because most presentation clickers send
-       those rather than arrows. Space too: it is what people press. */
     case 'ArrowRight': case 'PageDown': case ' ': go(1);  break;
     case 'ArrowLeft':  case 'PageUp':            go(-1); break;
-    case 'Home':       at = 0; render();                 break;
-    case 'End':        at = BEATS.length - 1; render();  break;
+    case 'Home': { const w = BEATS[at].part; at = 0; render(BEATS[0].part !== w || true); break; }
+    case 'End':  { const w = BEATS[at].part; at = BEATS.length - 1; render(BEATS[at].part !== w); break; }
     default: return;
   }
   e.preventDefault();
 });
 
-if (typeof physics !== 'function' || typeof HC === 'undefined') $('fatal').style.display = 'block';
+['material', 'wave', 'intensity'].forEach(id =>
+  $(id).addEventListener('input', () => { clearParticles(); update(); }));
 
-buildDots();
-render();
+$('represet').onclick = () => applyPreset(PARTS[BEATS[at].part].preset);
+
+if (typeof physics !== 'function' || typeof HC === 'undefined' || typeof MATERIALS === 'undefined') {
+  $('fatal').style.display = 'block';
+} else {
+  buildMaterials();
+  buildDots();
+  render(true);
+  requestAnimationFrame(animate);
+}
 </script>
 </body>
 </html>
