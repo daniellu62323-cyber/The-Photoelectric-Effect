@@ -51,6 +51,12 @@
   --no-emit:      #e5bb76;
 
   --ink:    system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+
+  /* The handwriting face. Measured: no handwriting font in the running has λ, φ
+     or ₀ — and this presentation is full of them. So --ink is the LAST entry on
+     purpose: a missing glyph lands on the body sans and reads as deliberate,
+     instead of dropping to the browser's default serif, which next to
+     handwriting looks like a rendering fault. Never let serif end this list. */
   --hand:   "Segoe Print", "Bradley Hand", "Chalkboard SE", "Comic Sans MS", var(--ink);
 }
 
@@ -111,6 +117,11 @@ hr { border: 0; border-top: 1px solid var(--rule-soft); margin: 28px 0; }
 
 .readout { display: flex; flex-direction: column; gap: 4px; }
 .readout label { font-size: 13px; letter-spacing: .06em; text-transform: uppercase; color: var(--chalk-dim); }
+
+/* Greek in an uppercased label is a notation bug, not a style choice:
+   text-transform turns λ into Λ and φ into Φ, which mean different things.
+   Wrap any Greek inside a label in this. <label>Threshold <i class="sym">λ₀</i></label> */
+.sym { text-transform: none; font-style: normal; }
 
 .value {
   font-family: var(--hand);
