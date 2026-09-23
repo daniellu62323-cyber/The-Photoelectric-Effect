@@ -53,20 +53,20 @@ body { display: flex; flex-direction: column; padding: 0; overflow: hidden; }
 #animation  { flex: 1 1 auto; min-height: 0; }
 #explanation { flex: none; min-height: 110px; }
 
-/* ---- The open question -------------------------------------------------- */
-#question { display: none; flex: none; border-style: solid; border-color: var(--accent-dim); }
-body.asking #question { display: flex; }
-#question .qtag { font-size: 12px; letter-spacing: .16em; text-transform: uppercase; color: var(--accent); }
-#question .what { color: var(--chalk); }
+/* ---- The open question --------------------------------------------------
+   A question TAKES OVER the stage rather than sitting under the animation.
+   Nothing else from the part is on screen while it is up, so neither the
+   animation nor the explanation can give the answer away - which is the
+   failure the review caught, where six of nine questions were answered by
+   the projector while being asked.
 
-/* While a question is open the animation must not give the answer away.
-   With placeholders there is nothing to hide yet, but the slot says so, so the
-   rule is visible in the structure rather than remembered later. */
-body.asking #animation { opacity: .35; }
-body.asking #animation .note::after {
-  content: ' — masked while the question is open';
-  color: var(--no-emit);
-}
+   The top bar stays above it, so the presenter can still reveal or move on. */
+#question { display: none; flex: 1 1 auto; border-style: solid; border-color: var(--accent-dim); }
+body.asking #question { display: flex; }
+body.asking .parts > .slot:not(#question) { display: none; }
+#question .qtag { font-size: 12px; letter-spacing: .16em; text-transform: uppercase; color: var(--accent); }
+#question .what { color: var(--chalk); font-size: clamp(26px, 3vw, 40px); }
+#question .note { font-size: 15px; }
 
 /* ---- Part 9: hand over to the toy --------------------------------------- */
 #endcard { display: none; flex-direction: column; align-items: center; justify-content: center;
