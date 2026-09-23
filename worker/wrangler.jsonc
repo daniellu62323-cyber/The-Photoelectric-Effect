@@ -1,0 +1,31 @@
+{
+  // Deployment spike for the live quiz backend. See src/index.js and
+  // BACKEND_STRUCTURE.md. This directory is the ONLY part of the repository
+  // with a build step; the site itself stays static and opens by
+  // double-clicking.
+  "$schema": "node_modules/wrangler/config-schema.json",
+
+  "name": "photoelectric-quiz",
+  "main": "src/index.js",
+  "compatibility_date": "2026-09-01",
+
+  // Gives the Worker a free https://photoelectric-quiz.<subdomain>.workers.dev
+  // address, which is why no domain needs buying.
+  "workers_dev": true,
+
+  "durable_objects": {
+    "bindings": [
+      { "name": "ROOM", "class_name": "Room" }
+    ]
+  },
+
+  // new_sqlite_classes, NOT new_classes. The Workers Free plan only supports
+  // SQLite-backed Durable Objects, and using the wrong key here is the most
+  // likely way this deploy fails on a free account.
+  "migrations": [
+    {
+      "tag": "v1",
+      "new_sqlite_classes": ["Room"]
+    }
+  ]
+}
