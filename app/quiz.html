@@ -1,0 +1,242 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>The Photoelectric Effect — quiz</title>
+<link rel="stylesheet" href="theme.css">
+<style>
+/* Phone-first. This page is opened by scanning a QR code on the projector,
+   over classroom wifi, so it stays small: no images, no libraries. */
+
+body { padding: 0; min-height: 100dvh; display: flex; flex-direction: column; }
+
+.bar {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 12px 18px; border-bottom: 1px solid var(--rule-soft);
+  background: var(--board-sunk); flex: none;
+}
+.bar .who   { font-family: var(--hand); font-size: 18px; }
+.bar .score { font-size: 13px; color: var(--chalk-dim); white-space: nowrap; }
+body.anon .bar { display: none; }
+
+.screen { flex: 1 1 auto; display: none; flex-direction: column; justify-content: center;
+          gap: 18px; padding: 24px 18px 32px; }
+body.at-join    #join,
+body.at-wait    #wait,
+body.at-ask     #ask,
+body.at-sent    #sent,
+body.at-done    #done { display: flex; }
+
+.big  { font-family: var(--hand); font-size: clamp(26px, 8vw, 38px); line-height: 1.2; }
+.note { color: var(--chalk-dim); font-size: 15px; }
+.placeholder { color: var(--chalk-faint); font-size: 13px; }
+
+/* ---- Choices: big tap targets, one per line ---------------------------- */
+.choices { display: flex; flex-direction: column; gap: 12px; }
+.choice {
+  display: block; width: 100%; text-align: left;
+  font-family: var(--hand); font-size: 20px; padding: 18px 18px;
+  border: 1.5px solid var(--rule); border-radius: 12px;
+  background: var(--board-sunk); color: var(--chalk);
+}
+.choice:active { background: var(--board-panel); }
+.choice[disabled] { opacity: .5; }
+.choice.picked { border-color: var(--accent); color: var(--accent); }
+
+/* ---- Waiting ------------------------------------------------------------ */
+.waiting { display: flex; align-items: center; gap: 12px; color: var(--chalk-dim); }
+.dot { width: 10px; height: 10px; border-radius: 50%; background: var(--accent);
+       animation: pulse 1.4s ease-in-out infinite; }
+@keyframes pulse { 0%,100% { opacity: .25 } 50% { opacity: 1 } }
+
+#join input { font-size: 18px; }
+#join button { font-size: 19px; padding: 16px; width: 100%; }
+
+.tally { font-family: var(--hand); font-size: clamp(44px, 16vw, 72px); color: var(--emit); }
+</style>
+</head>
+<body class="anon at-join">
+
+<div class="bar">
+  <span class="who" id="who"></span>
+  <span class="score" id="scoreLine"></span>
+</div>
+
+<!-- 1. Join ------------------------------------------------------------- -->
+<section class="screen" id="join">
+  <div>
+    <div class="big">The Photoelectric Effect</div>
+    <p class="note">Type a name so your score can find its way back to you. Nothing else is stored.</p>
+  </div>
+  <div>
+    <label for="name">Your name</label>
+    <input id="name" type="text" maxlength="24" autocomplete="off"
+           autocapitalize="words" placeholder="e.g. John">
+  </div>
+  <button type="button" class="primary" id="joinBtn">Join the quiz</button>
+  <p class="placeholder">If two people pick the same name you will be told apart by a number,
+  like John&nbsp;#1 and John&nbsp;#2.</p>
+</section>
+
+<!-- 2. Waiting for the presenter ---------------------------------------- -->
+<section class="screen" id="wait">
+  <div class="waiting"><span class="dot"></span><span id="waitText">Waiting for the next question…</span></div>
+  <p class="note">Keep this page open and watch the screen at the front.</p>
+  <p class="placeholder">Placeholder: for now this page moves itself along. Once the backend is
+  live, the presenter opens each question and this waits for them.</p>
+  <button type="button" id="waitNext">Next question (stand-in for the presenter)</button>
+</section>
+
+<!-- 3. A question -------------------------------------------------------- -->
+<section class="screen" id="ask">
+  <div>
+    <div class="note" id="qtag"></div>
+    <div class="big" id="qtext"></div>
+    <p class="placeholder">Question text to come.</p>
+  </div>
+  <div class="choices" id="choices"></div>
+</section>
+
+<!-- 4. Answer sent ------------------------------------------------------- -->
+<section class="screen" id="sent">
+  <div class="big" id="sentMsg">Answer sent</div>
+  <p class="note" id="sentSub"></p>
+  <div class="waiting"><span class="dot"></span><span>Waiting for the next question…</span></div>
+  <button type="button" id="sentNext">Next question (stand-in for the presenter)</button>
+</section>
+
+<!-- 5. Finished ---------------------------------------------------------- -->
+<section class="screen" id="done">
+  <div class="big">That's the lot</div>
+  <div class="tally" id="tally"></div>
+  <p class="note">Hold up your phone so everyone can see.</p>
+  <p class="placeholder">Placeholder: the shared leaderboard on the front screen needs the
+  backend. Until then, each phone knows only its own score.</p>
+</section>
+
+<script>
+const $ = id => document.getElementById(id);
+
+/* ---- Structure only ----------------------------------------------------
+   Six questions, matching the allocation on present.html. The text and the
+   choices are placeholder - they arrive with the real content. `correct` is
+   an array because a question may have more than one right answer.
+
+   questions.js is deliberately NOT loaded yet. It already holds real question
+   text with answers computed from physics(), but this page is a skeleton, and
+   loading a file it does not use would just be weight on a phone. Wiring the
+   two together is the step that replaces these placeholders. */
+const QUIZ = Array.from({ length: 6 }, (_, i) => ({
+  id: 'Q' + (i + 1),
+  choices: ['First choice', 'Second choice', 'Third choice'],
+  correct: [1]
+}));
+
+/* ---- Who you are -------------------------------------------------------
+   Phase 1: the phone numbers itself from its own storage, so two phones can
+   both end up #1. That is a known limitation - only a server can hand out
+   identities that are unique across the room. See SPEC.md §4. */
+const store = {
+  get(k, fallback) {
+    try { const v = localStorage.getItem(k); return v === null ? fallback : JSON.parse(v); }
+    catch { return fallback; }
+  },
+  set(k, v) {
+    try { localStorage.setItem(k, JSON.stringify(v)); return true; }
+    catch { return false; }
+  }
+};
+
+let me = store.get('pe.me', null);      /* { name, n, display } */
+let at = store.get('pe.at', 0);         /* index into QUIZ */
+let score = store.get('pe.score', 0);
+let persists = true;
+
+function show(where) {
+  document.body.className =
+    (me ? '' : 'anon ') + 'at-' + where;
+}
+
+function paintBar() {
+  if (!me) return;
+  $('who').textContent = me.display;
+  $('scoreLine').textContent = score + ' / ' + QUIZ.length
+    + (persists ? '' : ' · score will not survive a reload');
+}
+
+/* ---- Join --------------------------------------------------------------- */
+
+$('joinBtn').onclick = () => {
+  const name = $('name').value.trim() || 'Anonymous';
+  const n = store.get('pe.counter', 0) + 1;
+  persists = store.set('pe.counter', n);
+  me = { name, n, display: name + ' #' + n };
+  store.set('pe.me', me);
+  paintBar();
+  show('wait');
+};
+
+$('name').addEventListener('keydown', e => { if (e.key === 'Enter') $('joinBtn').click(); });
+
+/* ---- Questions ---------------------------------------------------------- */
+
+function askNext() {
+  if (at >= QUIZ.length) { finish(); return; }
+  const q = QUIZ[at];
+  $('qtag').textContent = q.id + ' · question ' + (at + 1) + ' of ' + QUIZ.length;
+  $('qtext').textContent = 'Question ' + q.id;
+  $('choices').innerHTML = q.choices
+    .map((c, i) => '<button type="button" class="choice" data-i="' + i + '">' + c + '</button>')
+    .join('');
+  $('choices').querySelectorAll('.choice').forEach(b => b.onclick = () => answer(+b.dataset.i, b));
+  show('ask');
+}
+
+function answer(i, btn) {
+  const q = QUIZ[at];
+  const right = q.correct.indexOf(i) !== -1;
+
+  /* One answer per question: everything locks the moment one is tapped. */
+  $('choices').querySelectorAll('.choice').forEach(b => b.disabled = true);
+  btn.classList.add('picked');
+
+  if (right) score++;
+  at++;
+  store.set('pe.at', at);
+  persists = store.set('pe.score', score) && persists;
+
+  $('sentMsg').textContent = right ? 'Correct' : 'Answer sent';
+  $('sentSub').textContent = right
+    ? 'That is a point. Watch the front screen for the answer.'
+    : 'Watch the front screen for the answer.';
+  paintBar();
+
+  setTimeout(() => show(at >= QUIZ.length ? 'done' : 'sent'), 450);
+  if (at >= QUIZ.length) finish();
+}
+
+function finish() {
+  $('tally').textContent = score + ' / ' + QUIZ.length;
+  show('done');
+}
+
+$('waitNext').onclick = askNext;
+$('sentNext').onclick = askNext;
+
+/* ---- Start -------------------------------------------------------------- */
+
+persists = store.set('pe.probe', 1);    /* does storage work at all? */
+
+if (me) {
+  paintBar();
+  /* finish() rather than show('done'): the tally has to be filled in, which a
+     bare show() does not do. Returning to a finished quiz after a reload was
+     landing on an empty score. */
+  if (at >= QUIZ.length) finish(); else show('wait');
+} else {
+  show('join');
+}
+</script>
+</body>
+</html>
