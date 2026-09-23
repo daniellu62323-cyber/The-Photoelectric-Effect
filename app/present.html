@@ -31,43 +31,51 @@ body { display: flex; flex-direction: column; padding: 0; overflow: hidden; }
 .qlabel { font-size: 13px; color: var(--chalk-dim); margin-right: 2px; }
 
 /* ---- Stage ------------------------------------------------------------- */
-.stage { flex: 1 1 auto; display: flex; flex-direction: column; align-items: center;
-         padding: 14px 24px 8px; max-width: 1600px; width: 100%; margin: 0 auto; min-height: 0; }
+.stage { flex: 1 1 auto; display: flex; flex-direction: column;
+         padding: 14px 28px 10px; max-width: 1500px; width: 100%; margin: 0 auto;
+         min-height: 0; gap: 12px; }
 
-.head { display: flex; align-items: baseline; gap: 14px; align-self: flex-start; flex: none; }
+.head { display: flex; align-items: baseline; gap: 14px; flex: none; }
 .partno { font-family: var(--hand); font-size: 20px; color: var(--chalk-dim); }
 .head h1 { margin: 0; font-size: clamp(24px, 3.2vw, 42px); }
 
-#scene { width: auto; height: auto; max-width: 100%; max-height: 58vh;
-         aspect-ratio: 880 / 460; border-radius: 10px; display: block; margin-top: 8px; }
-/* An open question needs room. The animation gives it up rather than pushing
-   the readouts off the bottom of the screen. */
-body.asking #scene { max-height: 40vh; }
+/* ---- Placeholders -------------------------------------------------------
+   Every slot the real content will drop into is drawn as an empty, labelled
+   box, so the shape of a part is visible before any of it is written. */
+.slot {
+  border: 2px dashed var(--rule); border-radius: 12px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 6px; text-align: center; padding: 20px;
+}
+.slot .what { font-family: var(--hand); font-size: 22px; color: var(--chalk-dim); }
+.slot .note { font-size: 13px; color: var(--chalk-faint); max-width: 46ch; }
 
-.status { text-align: center; margin-top: 4px; }
-.readouts { display: flex; gap: clamp(18px, 3vw, 50px); flex-wrap: wrap; justify-content: center; }
-.readouts .readout { gap: 2px; align-items: center; }
-.readouts .value { font-size: clamp(22px, 2.8vw, 38px); }
+#animation  { flex: 1 1 auto; min-height: 0; }
+#explanation { flex: none; min-height: 110px; }
 
-/* ---- The open question, shown to the room ------------------------------ */
-#question { display: none; margin-top: 8px; max-width: 1100px; text-align: center; }
-body.asking #question { display: block; }
-#question .qtext { font-family: var(--hand); font-size: clamp(22px, 2.6vw, 34px); line-height: 1.3; }
-#question .qtag { font-size: 12px; letter-spacing: .16em; text-transform: uppercase;
-                  color: var(--accent); margin-bottom: 4px; }
+/* ---- The open question -------------------------------------------------- */
+#question { display: none; flex: none; border-style: solid; border-color: var(--accent-dim); }
+body.asking #question { display: flex; }
+#question .qtag { font-size: 12px; letter-spacing: .16em; text-transform: uppercase; color: var(--accent); }
+#question .what { color: var(--chalk); }
 
-/* Part 9 hands over to the original simulation, untouched. */
+/* While a question is open the animation must not give the answer away.
+   With placeholders there is nothing to hide yet, but the slot says so, so the
+   rule is visible in the structure rather than remembered later. */
+body.asking #animation { opacity: .35; }
+body.asking #animation .note::after {
+  content: ' — masked while the question is open';
+  color: var(--no-emit);
+}
+
+/* ---- Part 9: hand over to the toy --------------------------------------- */
 #endcard { display: none; flex-direction: column; align-items: center; justify-content: center;
            gap: 18px; flex: 1 1 auto; text-align: center; }
 #endcard a.btn { font-size: 22px; padding: 16px 30px; text-decoration: none; }
-body.toy .lab { display: none; }
+body.toy .parts { display: none; }
 body.toy #endcard { display: flex; }
 
-.lab { display: flex; flex-direction: column; align-items: center; gap: 6px;
-       flex: 1 1 auto; min-height: 0; width: 100%; }
-
-#fatal { display: none; margin: 16px 24px; padding: 14px 18px;
-         border: 2px solid var(--no-emit); border-radius: 10px; color: var(--no-emit); }
+.parts { display: flex; flex-direction: column; gap: 12px; flex: 1 1 auto; min-height: 0; }
 </style>
 </head>
 <body>
@@ -83,27 +91,27 @@ body.toy #endcard { display: flex; }
   <span class="where" id="where"></span>
 </div>
 
-<div id="fatal"><strong>physics.js did not load.</strong> Every number on this page comes from it.
-Check that <code>physics.js</code> sits beside <code>present.html</code>.</div>
-
 <main class="stage">
   <div class="head">
     <span class="partno" id="partno"></span>
     <h1 id="title"></h1>
   </div>
 
-  <div class="lab">
-    <canvas id="scene" width="880" height="460"
-            aria-label="Light strikes a metal surface; electrons escape only above the energy threshold"></canvas>
+  <div class="parts">
+    <div class="slot" id="animation">
+      <div class="what">Animation</div>
+      <div class="note" id="animationNote"></div>
+    </div>
 
-    <div id="question"><div class="qtag" id="qtag"></div><div class="qtext" id="qtext"></div></div>
+    <div class="slot" id="question">
+      <div class="qtag" id="qtag"></div>
+      <div class="what" id="qwhat"></div>
+      <div class="note">The question text and its options go here. The audience answers on their phones.</div>
+    </div>
 
-    <div class="status" id="status"></div>
-    <div class="readouts">
-      <div class="readout"><label>Photon energy</label><div class="value accent" id="energy">&mdash;</div></div>
-      <div class="readout"><label>Max kinetic energy</label><div class="value" id="kinetic">&mdash;</div></div>
-      <div class="readout"><label>Threshold <i class="sym">&lambda;&#8320;</i></label><div class="value" id="threshold">&mdash;</div></div>
-      <div class="readout"><label>Emission rate</label><div class="value" id="rate">&mdash;</div></div>
+    <div class="slot" id="explanation">
+      <div class="what">Explanation</div>
+      <div class="note" id="explanationNote"></div>
     </div>
   </div>
 
@@ -114,289 +122,44 @@ Check that <code>physics.js</code> sits beside <code>present.html</code>.</div>
   </div>
 </main>
 
-<!-- The simulation's parameters. Hidden for now: the user wants the original
-     controls back on this page, to be settled in a later task. -->
-<div hidden>
-  <select id="material"></select>
-  <input id="wave" type="range" min="180" max="800" step="1" value="400">
-  <input id="intensity" type="range" min="0" max="100" step="1" value="50">
-</div>
-
-<script src="physics.js"></script>
 <script>
 const $ = id => document.getElementById(id);
 
-/* ---- The ten parts, and the questions each one carries ------------------
-   Question text is from SPEC.md §4. Opening a question masks the readouts
-   that would answer it, so the projector cannot give the answer away while
-   the room is still answering. */
+/* ---- The structure -----------------------------------------------------
+   Ten parts. `questions` is how many the part carries; the text, the
+   animations and the explanations are all still to be written, so every slot
+   on screen is an empty labelled box for now. Question numbering runs
+   Q1..Q6 across the whole talk, not per part. */
 const PARTS = [
-  { title: 'Join',  preset: { phi: 2.30, wave: 400, intensity: 50 }, questions: [] },
-  { title: 'Intro', preset: { phi: 2.30, wave: 400, intensity: 50 }, questions: [] },
-  { title: 'The puzzle', preset: { phi: 2.30, wave: 700, intensity: 100 }, questions: [
-      { id: 'Q1', text: 'Sodium, red light at 700 nm. We turn the brightness to maximum. What happens?',
-        mask: ['status', 'energy', 'kinetic', 'rate', 'threshold'] } ] },
-  { title: 'Light in packets', preset: { phi: 2.30, wave: 400, intensity: 50 }, questions: [
-      { id: 'Q2', text: 'Which photon carries more energy — 400 nm violet, or 700 nm red?',
-        mask: ['energy'] } ] },
-  { title: 'The work function', preset: { phi: 4.30, wave: 400, intensity: 50 }, questions: [
-      { id: 'Q3', text: 'Cesium needs 2.14 eV to release an electron; copper needs 4.70 eV. Which one needs shorter-wavelength light?',
-        mask: [] } ] },
-  { title: 'The threshold', preset: { phi: 4.30, wave: 300, intensity: 60 }, questions: [
-      { id: 'Q4', text: 'Zinc needs 4.30 eV. What is the longest wavelength that still releases an electron?',
-        mask: ['threshold', 'status'] } ] },
-  { title: 'Leftover energy', preset: { phi: 2.30, wave: 400, intensity: 50 }, questions: [
-      { id: 'Q5', text: 'Sodium needs 2.30 eV. Each photon delivers 3.10 eV. What is the maximum kinetic energy?',
-        mask: ['kinetic'] },
-      { id: 'Q6', text: 'Same light, now twice as bright. What is the maximum kinetic energy now?',
-        mask: ['kinetic'] } ] },
-  { title: 'The straight line', preset: { phi: 2.30, wave: 400, intensity: 50 }, questions: [] },
-  { title: 'Why it matters',   preset: { phi: 2.30, wave: 400, intensity: 50 }, questions: [] },
-  { title: 'Scores, then play', preset: { phi: 2.30, wave: 400, intensity: 50 }, questions: [] }
+  { title: 'Join',              questions: 0 },
+  { title: 'Intro',             questions: 0 },
+  { title: 'The puzzle',        questions: 1 },
+  { title: 'Light in packets',  questions: 1 },
+  { title: 'The work function', questions: 1 },
+  { title: 'The threshold',     questions: 1 },
+  { title: 'Leftover energy',   questions: 2 },
+  { title: 'The straight line', questions: 0 },
+  { title: 'Why it matters',    questions: 0 },
+  { title: 'Scores, then play', questions: 0 }
 ];
 
-let part = 0;      /* which part is on screen */
-let openQ = null;  /* index into PARTS[part].questions, or null */
+/* Give every question its number once, so the buttons and the slots agree. */
+let n = 0;
+PARTS.forEach(p => { p.qids = Array.from({ length: p.questions }, () => 'Q' + (++n)); });
+const TOTAL_QUESTIONS = n;
+
+let part = 0;        /* which part is on screen */
+let openQ = null;    /* index into PARTS[part].qids, or null */
 const asked = new Set();
-let state = null;
-
-/* ---- The scene ---------------------------------------------------------
-   Ported from index.html. The incidence angle θ is GONE, not hidden: it
-   appears nowhere in physics() and changes no result, so presenting it as a
-   control implies a relevance it does not have (SPEC.md §2). Removing it is
-   drawing-code surgery rather than deleting a slider, because laserAngle also
-   drives laserTarget(), which sets photon spawn targets and the electron
-   launch angle. So the angle is frozen at the value the old page opened with
-   and the arc, the label, the normal line and the aiming affordance are cut. */
-const LASER_ANGLE = 68;
-const laserOrigin = { x: 240, y: 200 };
-function laserTarget() { return { x: 240 + 135 * Math.tan(LASER_ANGLE * Math.PI / 180), y: 335 }; }
-
-const canvas = $('scene'), ctx = canvas.getContext('2d');
-let photons = [], electrons = [], impacts = [], photonClock = 0, sequence = 0;
-let last = 0;
-
-/* Set while a question masking the status is open. The canvas prints its own
-   verdict ("Not enough energy to escape"), which gives the answer away just as
-   plainly as a readout does, so it is suppressed too. */
-let hideVerdict = false;
-
-/* Replaced in task 6: this mapping renders 700 nm as amber and 650 nm as
-   yellow-green, and part 2's whole premise is that the light looks red. */
-function lightColor(w) {
-  if (w < 380) return '#b69aff';
-  if (w > 750) return '#d86b58';
-  const hue = 270 - (w - 380) / (750 - 380) * 270;
-  return `hsl(${hue},85%,68%)`;
-}
-
-function clearParticles() { photons = []; electrons = []; impacts = []; photonClock = 0; }
-
-function spawnPhoton() {
-  const n = sequence++, target = laserTarget();
-  photons.push({ x: laserOrigin.x, y: laserOrigin.y, tx: target.x + (n % 3 - 1) * 3, ty: target.y,
-                 p: 0, energy: state.energy, wavelength: state.wavelength });
-}
-
-function advanceParticles(dt) {
-  if (!state) return;
-  /* Photon ARRIVAL is deliberately ungated: photons keep landing below
-     threshold and simply fail to free anything. Part 2 depends on the room
-     seeing light arrive and nothing come off. */
-  const flux = state.intensity / 50 * state.wavelength / 400 * 5;
-  if (flux > 0) { photonClock += dt * flux; while (photonClock >= 1) { spawnPhoton(); photonClock--; } }
-  for (const p of photons) {
-    p.p += dt / .95;
-    if (p.p >= 1) {
-      const k = p.energy - state.phi;
-      impacts.push({ x: p.tx, y: p.ty, age: 0, success: k > 0 });
-      if (k > 0) electrons.push({ x: p.tx, y: p.ty - 5, v: 95 * Math.sqrt(k),
-                                  angle: -1.35 + (p.tx - 490) / 245 * .6, age: 0, trail: [] });
-    }
-  }
-  photons = photons.filter(p => p.p < 1);
-  for (const e of electrons) {
-    e.trail.push({ x: e.x, y: e.y }); if (e.trail.length > 8) e.trail.shift();
-    e.x += Math.cos(e.angle) * e.v * dt; e.y += Math.sin(e.angle) * e.v * dt; e.age += dt;
-  }
-  electrons = electrons.filter(e => e.y > 40 && e.x < 855 && e.age < 9);
-  for (const i of impacts) i.age += dt;
-  impacts = impacts.filter(i => i.age < .55);
-}
-
-function drawScene() {
-  if (!state) return;
-  const s = state, c = ctx, lit = s.intensity > 0, color = lightColor(s.wavelength);
-
-  c.clearRect(0, 0, 880, 460);
-  const bg = c.createLinearGradient(0, 0, 0, 460);
-  bg.addColorStop(0, '#15252b'); bg.addColorStop(1, '#10191d');
-  c.fillStyle = bg; c.fillRect(0, 0, 880, 460);
-
-  c.strokeStyle = '#ffffff06'; c.lineWidth = 1;
-  for (let x = 30; x < 880; x += 40) { c.beginPath(); c.moveTo(x, 50); c.lineTo(x, 410); c.stroke(); }
-  for (let y = 50; y < 430; y += 40) { c.beginPath(); c.moveTo(25, y); c.lineTo(855, y); c.stroke(); }
-
-  c.font = '16px system-ui'; c.fillStyle = '#c5b69d';
-  c.fillText('1  LASER POINTER', 40, 37);
-  c.fillText('2  PHOTONS ARRIVE', 310, 37);
-  c.fillText('3  ELECTRONS ESCAPE?', 620, 37);
-
-  const target = laserTarget();
-  const beamAngle = Math.atan2(target.y - laserOrigin.y, target.x - laserOrigin.x);
-
-  if (lit) {
-    c.save(); c.strokeStyle = color; c.globalAlpha = .12 + .32 * s.intensity / 100;
-    c.shadowColor = color; c.shadowBlur = 18; c.lineWidth = 10;
-    c.beginPath(); c.moveTo(laserOrigin.x, laserOrigin.y); c.lineTo(target.x, target.y); c.stroke();
-    c.globalAlpha = .4 + .5 * s.intensity / 100; c.lineWidth = 2; c.stroke(); c.restore();
-  }
-
-  const plate = c.createLinearGradient(0, 335, 0, 370);
-  plate.addColorStop(0, '#c0d4d8'); plate.addColorStop(.18, '#718b94'); plate.addColorStop(1, '#34454e');
-  c.fillStyle = plate; c.fillRect(440, 335, 370, 31);
-  c.fillStyle = '#d9e5e7'; c.fillRect(440, 332, 370, 4);
-  c.strokeStyle = '#afc4cd55';
-  for (let x = 450; x < 810; x += 14) { c.beginPath(); c.moveTo(x, 342); c.lineTo(x + 8, 358); c.stroke(); }
-
-  c.font = '18px system-ui'; c.fillStyle = '#f5e9d6';
-  c.fillText(materialName() + ' surface', 453, 400);
-  c.font = '15px system-ui'; c.fillStyle = '#e5bb76';
-  c.fillText('Escape energy: ' + s.phi.toFixed(2) + ' eV', 453, 427);
-
-  /* The laser body. Its angle is fixed, so this no longer rotates with a
-     control — it is drawn once at LASER_ANGLE to keep the beam geometry. */
-  c.save(); c.translate(laserOrigin.x, laserOrigin.y); c.rotate(beamAngle);
-  const barrel = c.createLinearGradient(0, -16, 0, 16);
-  barrel.addColorStop(0, '#aabcc6'); barrel.addColorStop(.25, '#e0e8ec');
-  barrel.addColorStop(.55, '#60747e'); barrel.addColorStop(1, '#283e49');
-  c.fillStyle = barrel; c.beginPath(); c.roundRect(-175, -15, 165, 30, 10); c.fill();
-  c.fillStyle = '#253b47'; c.fillRect(-42, -15, 28, 30);
-  c.fillStyle = '#c4d4dc'; c.fillRect(-14, -11, 14, 22);
-  c.fillStyle = lit ? color : '#253b47'; c.fillRect(-2, -7, 4, 14);
-  c.fillStyle = lit ? '#9debe4' : '#69808a'; c.beginPath(); c.roundRect(-105, -20, 24, 7, 3); c.fill();
-  c.restore();
-
-  /* The illuminated spot. The θ arc, the θ label, the "normal" dashed line and
-     "Drag the spot to aim" all went with the angle control. */
-  c.save(); c.strokeStyle = lit ? color : '#82949b'; c.lineWidth = 2;
-  c.beginPath(); c.ellipse(target.x, 335, 15, 6, 0, 0, Math.PI * 2); c.stroke(); c.restore();
-
-  for (const p of photons) {
-    const x = p.x + (p.tx - p.x) * p.p, y = p.y + (p.ty - p.y) * p.p;
-    const a = Math.atan2(p.ty - p.y, p.tx - p.x);
-    c.save(); c.translate(x, y); c.rotate(a);
-    c.strokeStyle = lightColor(p.wavelength); c.lineWidth = 2.5;
-    c.shadowBlur = 7; c.shadowColor = c.strokeStyle; c.beginPath();
-    const period = 7 + 14 * (p.wavelength - 180) / 620;
-    for (let j = -15; j <= 15; j++) {
-      const yy = Math.sin((j + 15) / period * Math.PI * 2) * 5;
-      j === -15 ? c.moveTo(j, yy) : c.lineTo(j, yy);
-    }
-    c.stroke(); c.restore();
-  }
-
-  for (const i of impacts) {
-    c.save(); c.globalAlpha = Math.max(0, 1 - i.age / .55);
-    c.strokeStyle = i.success ? '#9debe4' : '#e5bb76'; c.lineWidth = 2;
-    c.beginPath(); c.arc(i.x, i.y, 4 + i.age * 30, Math.PI, Math.PI * 2); c.stroke(); c.restore();
-  }
-
-  for (const e of electrons) {
-    c.save(); c.strokeStyle = '#93d9db66'; c.lineWidth = 2; c.beginPath();
-    e.trail.forEach((p, i) => i ? c.lineTo(p.x, p.y) : c.moveTo(p.x, p.y)); c.stroke();
-    c.fillStyle = '#9debe4'; c.shadowColor = '#93d9db'; c.shadowBlur = 12;
-    c.beginPath(); c.arc(e.x, e.y, 7, 0, Math.PI * 2); c.fill(); c.shadowBlur = 0;
-    c.strokeStyle = '#12383a'; c.beginPath(); c.moveTo(e.x - 3, e.y); c.lineTo(e.x + 3, e.y); c.stroke();
-    c.restore();
-  }
-
-  if (!hideVerdict) {
-    c.font = '16px system-ui';
-    c.fillStyle = lit ? (s.emits ? '#9debe4' : '#e5bb76') : '#c5b69d';
-    c.fillText(!lit ? 'Laser off' : s.emits ? 'Energy left over → motion!' : 'Not enough energy to escape', 470, 103);
-  }
-  c.font = '14px system-ui'; c.fillStyle = '#a5b7ba';
-  c.fillText(lit ? 'Each wave packet represents one photon.' : 'Turn up the intensity to switch on the laser.', 37, 439);
-}
-
-function animate(t) {
-  const dt = last ? Math.min((t - last) / 1000, .05) : 0;
-  last = t;
-  advanceParticles(dt);
-  drawScene();
-  requestAnimationFrame(animate);
-}
-
-/* ---- Controls ---------------------------------------------------------- */
-
-function materialName() {
-  const m = MATERIALS.find(m => m.phi === +$('material').value);
-  return m ? m.name : 'Custom metal';
-}
-
-function buildMaterials() {
-  /* Built from MATERIALS in physics.js rather than typed here, so the work
-     functions cannot drift from the ones the answer key uses. */
-  $('material').innerHTML = MATERIALS
-    .map(m => '<option value="' + m.phi.toFixed(2) + '">' + m.name + ' · ' + m.phi.toFixed(2) + ' eV</option>')
-    .join('');
-}
-
-function update() {
-  const phi = +$('material').value, wave = +$('wave').value, intensity = +$('intensity').value;
-  state = physics(wave, intensity, phi);
-  const s = state;
-
-  document.documentElement.style.setProperty('--accent', lightColor(wave));
-
-  $('energy').textContent    = s.energy.toFixed(2) + ' eV';
-  $('kinetic').textContent   = s.k > 0 ? s.k.toFixed(2) + ' eV' : '—';
-  $('threshold').textContent = s.threshold.toFixed(1) + ' nm';
-  $('rate').textContent      = s.rate.toFixed(2) + '×';
-  $('kinetic').className = 'value ' + (s.k > 0 ? 'emit' : 'none');
-
-  const st = $('status');
-  st.textContent = intensity === 0
-    ? 'Laser off · no photons arriving'
-    : s.emits ? 'Emission · photon energy exceeds the work function'
-              : 'No emission · photon energy does not exceed the work function';
-  st.className = 'status ' + (s.emits ? 'emit' : 'none');
-
-  applyMask();
-}
-
-/* Masking is the ask/reveal mechanism. While a question is open, the readouts
-   that would answer it are hidden — otherwise the projector answers the
-   question while the room is still thinking about it. */
-function applyMask() {
-  const ids = ['status', 'energy', 'kinetic', 'threshold', 'rate'];
-  const q = openQ === null ? null : PARTS[part].questions[openQ];
-  hideVerdict = q ? q.mask.indexOf('status') !== -1 : false;
-  ids.forEach(id => {
-    const el = $(id);
-    const hide = q ? q.mask.indexOf(id) !== -1 : false;
-    if (id === 'status') el.style.visibility = hide ? 'hidden' : '';
-    else el.classList.toggle('masked', hide);
-  });
-}
-
-function applyPreset(p) {
-  $('material').value = p.phi.toFixed(2);
-  $('wave').value = p.wave;
-  $('intensity').value = p.intensity;
-  clearParticles();
-  update();
-}
 
 /* ---- The top bar -------------------------------------------------------- */
 
 function renderQuestionButtons() {
-  const qs = PARTS[part].questions;
-  $('qlabel').textContent = qs.length === 0 ? 'No question here'
-                          : qs.length === 1 ? 'Question:' : 'Questions:';
-  $('qbuttons').innerHTML = qs
-    .map((q, i) => '<button type="button" class="qbtn" data-i="' + i + '">' + q.id + '</button>')
+  const ids = PARTS[part].qids;
+  $('qlabel').textContent = ids.length === 0 ? 'No question here'
+                          : ids.length === 1 ? 'Question:' : 'Questions:';
+  $('qbuttons').innerHTML = ids
+    .map((id, i) => '<button type="button" class="qbtn" data-i="' + i + '">' + id + '</button>')
     .join(' ');
   $('qbuttons').querySelectorAll('button').forEach(b =>
     b.onclick = () => toggleQuestion(+b.dataset.i));
@@ -405,50 +168,55 @@ function renderQuestionButtons() {
 
 function paintQuestionButtons() {
   $('qbuttons').querySelectorAll('button').forEach(b => {
-    const i = +b.dataset.i, q = PARTS[part].questions[i];
+    const i = +b.dataset.i, id = PARTS[part].qids[i];
     b.classList.toggle('open', openQ === i);
-    b.classList.toggle('done', openQ !== i && asked.has(q.id));
-    b.textContent = openQ === i ? q.id + ' — reveal' : q.id;
+    b.classList.toggle('done', openQ !== i && asked.has(id));
+    b.textContent = openQ === i ? id + ' — reveal' : id;
   });
 }
 
 /* First press asks the question; second press reveals the answer. */
 function toggleQuestion(i) {
-  const q = PARTS[part].questions[i];
-  if (openQ === i) { openQ = null; asked.add(q.id); }
-  else { openQ = i; $('qtag').textContent = q.id; $('qtext').textContent = q.text; }
+  const id = PARTS[part].qids[i];
+  if (openQ === i) { openQ = null; asked.add(id); }
+  else { openQ = i; $('qtag').textContent = id; $('qwhat').textContent = 'Question ' + id; }
   document.body.classList.toggle('asking', openQ !== null);
   paintQuestionButtons();
-  applyMask();
 }
 
-function render(newPart) {
+/* ---- The stage ---------------------------------------------------------- */
+
+function render() {
+  const p = PARTS[part];
   $('partno').textContent = part + ' /';
-  $('title').textContent  = PARTS[part].title;
+  $('title').textContent  = p.title;
   $('where').textContent  = 'part ' + part + ' of ' + (PARTS.length - 1);
+
+  $('animationNote').textContent   = 'Part ' + part + ' — ' + p.title + '. To be built.';
+  $('explanationNote').textContent = 'What the presenter says, and whatever text supports it. To be written.';
+
   document.body.classList.toggle('toy', part === PARTS.length - 1);
   $('prev').disabled = part === 0;
   $('next').disabled = part === PARTS.length - 1;
-  if (newPart) {
-    openQ = null;
-    document.body.classList.remove('asking');
-    renderQuestionButtons();
-    applyPreset(PARTS[part].preset);
-  }
+
+  openQ = null;
+  document.body.classList.remove('asking');
+  renderQuestionButtons();
 }
 
 function goPart(delta) {
   const next = part + delta;
   if (next < 0 || next >= PARTS.length) return;
   part = next;
-  render(true);
+  render();
 }
 
 $('next').onclick = () => goPart(1);
 $('prev').onclick = () => goPart(-1);
 
-/* Restart needs a second press. One stray click mid-presentation should not
-   wipe the room's progress, and the armed state times out on its own. */
+/* ---- Restart ------------------------------------------------------------
+   Two deliberate clicks in a row on the button itself. Clicking anywhere else
+   cancels, and it disarms itself after four seconds. */
 let arming = null;
 function disarm() {
   arming = null;
@@ -459,28 +227,19 @@ $('restart').onclick = () => {
   if (arming) {
     clearTimeout(arming);
     disarm();
-    part = 0; asked.clear(); render(true);
+    part = 0; asked.clear(); render();
     return;
   }
   $('restart').classList.add('arming');
   $('restart').textContent = 'Are you sure?';
   arming = setTimeout(disarm, 4000);
 };
-
-/* Clicking anywhere else cancels the arming, so a restart always costs two
-   deliberate clicks in a row on the button itself. Capture phase, so it runs
-   even if something downstream stops the event. */
+/* Capture phase, so it still fires if something downstream stops the event. */
 document.addEventListener('click', e => {
   if (arming && !$('restart').contains(e.target)) { clearTimeout(arming); disarm(); }
 }, true);
 
-if (typeof physics !== 'function' || typeof HC === 'undefined' || typeof MATERIALS === 'undefined') {
-  $('fatal').style.display = 'block';
-} else {
-  buildMaterials();
-  render(true);
-  requestAnimationFrame(animate);
-}
+render();
 </script>
 </body>
 </html>
